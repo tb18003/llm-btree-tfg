@@ -1,0 +1,4 @@
+string prompt
+---
+int32 status_code
+string response

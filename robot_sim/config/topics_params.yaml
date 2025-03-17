@@ -1,0 +1,6 @@
+robot_sim_node:
+  ros__parameters:
+    MOVE_TOPIC: /sancho/move
+    WHISPER_TOPIC: /sancho/whisper
+    BATTERY_TOPIC: /sancho/battery
+    
