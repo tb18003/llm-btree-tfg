@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'robot_sim'
+package_name = 'task_sim'
 
 setup(
     name=package_name,
@@ -10,19 +10,17 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-        ('share/' + package_name + "/launch", ['launch/launch.py']),
-        ('share/' + package_name + "/config", ['config/params.yaml']),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='ubuntu',
-    maintainer_email='tb18ms@gmail.com',
-    description='A robot simulator (topics and services) with GUI',
-    license='GPL-3.0-only',
+    maintainer='tonib',
+    maintainer_email='68343004+tb18003@users.noreply.github.com',
+    description='TODO: Package description',
+    license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            "robot_sim_node = robot_sim.robot_sim_node:main"
+            'move_node = task_sim.move_node:main'
         ],
     },
 )

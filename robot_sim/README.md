@@ -13,7 +13,7 @@ before implementing the bridge between the packages and the robot. (All of these
     - Message type: ```geomtry_msgs/msg/Point32```
 
 - **Whisper Topic** [ ]
-    - Topic type: ```Subscription```
+    - Topic type: ```Publisher```
     - Topic name: ```/sancho/whisper```
     - Message type: ```std_msgs/msg/String```
 

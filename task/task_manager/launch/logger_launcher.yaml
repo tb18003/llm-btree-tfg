@@ -1,0 +1,9 @@
+launch:
+- node: 
+    name: "task_executor_node"
+    pkg: "task_manager"
+    exec: "task_executor_node"
+- node: 
+    name: "robot_sim_node"
+    pkg: "robot_sim"
+    exec: "robot_sim_node"

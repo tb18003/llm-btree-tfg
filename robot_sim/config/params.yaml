@@ -1,0 +1,5 @@
+robot_sim_node:
+  ros__parameters:
+    MOVE_TOPIC: /robot/move
+    TTS_TOPIC: /robot/tts
+    

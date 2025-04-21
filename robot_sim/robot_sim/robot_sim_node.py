@@ -2,61 +2,10 @@ import rclpy
 import rclpy.executors
 from rclpy.node import Node
 from std_msgs.msg import String, Int32
-from PyQt5.QtWidgets import QWidget, QApplication, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QGroupBox, QDial
-from PyQt5.QtCore import Qt
+from geometry_msgs.msg import Point32
+from PyQt5.QtWidgets import QApplication
 from threading import Thread
-
-class RobotSimServerGUI(QWidget):
-
-    def __init__(self):
-        super().__init__()
-        self.init_components()
-
-    def set_ros_node(self, node):
-        self.ros_node = node
-        self.dial.setEnabled(True)
-
-    def init_components(self):
-        # Screen Layout
-        sc_layout = QVBoxLayout(self)
-
-        # Window Label
-        title_label = QLabel()
-        title_label.setText("Robot Simulation Controller")
-        title_label.setStyleSheet("font-size: 20px; font-weight: bold")
-        title_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-
-        sc_layout.addWidget(title_label)
-        sc_layout.addWidget(self.battery_view())
-
-        self.setWindowTitle("Robot Simulation Controller (Server Side)")
-
-    def on_dial_change(self, value):
-        self.bt_label.setText("%d %" % value)
-        self.ros_node.publish_battery(value)
-
-    def battery_view(self):
-        # Battery Container
-        container = QGroupBox()
-        container.setWindowTitle("Battery Simulation")
-        
-        # Container layout
-        b_layout = QHBoxLayout(container)
-        
-        self.dial = QDial()
-        self.dial.setRange(0,100)
-        self.dial.setValue(100)
-        self.dial.valueChanged.connect(self.on_dial_change)
-        self.dial.setEnabled(False)
-
-        self.bt_label = QLabel()
-        self.bt_label.setText("100 %")
-        self.bt_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
-
-        b_layout.addWidget(self.dial)
-        b_layout.addWidget(self.bt_label)
-
-        return container
+from .gui.robot_sim_gui import RobotLoggerSimGUI
 
 
 class RobotSimNode(Node):
@@ -64,29 +13,27 @@ class RobotSimNode(Node):
     def __init__(self, view):
         super().__init__("robot_sim_node")
 
-        self.declare_parameter("MOVE_TOPIC", "/not/found")
-        self.declare_parameter("WHISPER_TOPIC", "/not/found")
-        self.declare_parameter("BATTERY_TOPIC", "/not/found")
+        self.declare_parameter("MOVE_TOPIC", "/robot/move")
+        self.declare_parameter("TTS_TOPIC", "/robot/tts")
 
-        self.publisher = self.create_publisher(String, "/robot_sim/test", 10)
-        self.battery_pub = self.create_publisher(Int32, self.get_parameter("BATTERY_TOPIC").value, 10)
-    
-    def publish_action(self):
-        m = String()
-        m.data = self.get_parameter("MOVE_TOPIC").value
-        self.publisher.publish(m)
-    
-    def publish_battery(self, b_level):
-        m = Int32()
-        m.data = b_level
-        self.battery_pub.publish(m)
+        self.view = view
 
+        self.move_sub = self.create_subscription(Point32, self.get_parameter("MOVE_TOPIC").value, self.move_subscription_callback,10)
+        self.tts_pub = self.create_subscription(String, self.get_parameter("TTS_TOPIC").value, self.tts_subscription_callback, 10)
+
+        view.log("ROS2 System Started.","system")
+
+    def move_subscription_callback(self, message: Point32):
+        self.view.log(f"Moving robot to position (X = {round(message.x, 3)}, Y = {round(message.y, 3)}, Z = {round(message.z, 3)})")
+    
+    def tts_subscription_callback(self, message: String):
+        self.view.log(f"Robot said '{message.data}'")
 
 def main(args=None):
     rclpy.init(args=args)
 
     app = QApplication([])
-    gui = RobotSimServerGUI()
+    gui = RobotLoggerSimGUI()
 
     node = RobotSimNode(gui)
 
