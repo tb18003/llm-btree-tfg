@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'llm_bridge_service'
+package_name = 'llm_bridge'
 
 setup(
     name=package_name,
@@ -16,10 +16,12 @@ setup(
     maintainer='tonib',
     maintainer_email='68343004+tb18003@users.noreply.github.com',
     description='TODO: Package description',
-    license='GPL-3.0-only',
+    license='GPL3.0',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            "llm_bridge_service = llm_bridge.llm_bridge_service:main",
+            "llm_bridge_node = llm_bridge.llm_bridge_node:main",
         ],
     },
 )

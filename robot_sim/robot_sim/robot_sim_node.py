@@ -15,11 +15,15 @@ class RobotSimNode(Node):
 
         self.declare_parameter("MOVE_TOPIC", "/robot/move")
         self.declare_parameter("TTS_TOPIC", "/robot/tts")
+        self.declare_parameter("WHISPER_TOPIC", "/robot/whisper")
 
         self.view = view
 
         self.move_sub = self.create_subscription(Point32, self.get_parameter("MOVE_TOPIC").value, self.move_subscription_callback,10)
-        self.tts_pub = self.create_subscription(String, self.get_parameter("TTS_TOPIC").value, self.tts_subscription_callback, 10)
+        self.tts_sub = self.create_subscription(String, self.get_parameter("TTS_TOPIC").value, self.tts_subscription_callback, 10)
+        self.whisper_pub = self.create_publisher(String, self.get_parameter("WHISPER_TOPIC").value, 10)
+
+        self.whisper_pub.topic_name
 
         view.log("ROS2 System Started.","system")
 
@@ -28,6 +32,9 @@ class RobotSimNode(Node):
     
     def tts_subscription_callback(self, message: String):
         self.view.log(f"Robot said '{message.data}'")
+    
+    def whisper_message_sender(self, message: str):
+        self.whisper_pub.publish(String(data=message))
 
 def main(args=None):
     rclpy.init(args=args)
