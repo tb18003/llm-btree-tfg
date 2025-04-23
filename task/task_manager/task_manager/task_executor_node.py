@@ -28,9 +28,15 @@ class TaskExecutorNode(Node):
 
     def __init__(self, actions: dict[str, Task]):
         super().__init__('task_executor_node')
-        self.task_topic = self.create_subscription(String, '/task/input', self.receive_tasks, 10)
+
+        task_topic_param = self.declare_parameter("TASKS_TOPIC","/task/input")
+        self.gui_sender_param = self.declare_parameter("GUI_SENDER", False)
+
+        self.task_topic = self.create_subscription(String, task_topic_param.value, self.receive_tasks, 10)
         # GUI Publisher
-        self.task_sender = self.create_publisher(String, '/task/input', 10)
+        if self.gui_sender_param.value:
+            self.task_sender = self.create_publisher(String, task_topic_param.value, 10)
+
         self.actions = actions
         self.get_logger().info("Task Executor node started!")
 
@@ -99,10 +105,6 @@ def main(args=[]):
         'log': LogTask
     })
 
-    app = QApplication(args)
-
-    gui = TaskExecutorGUI(node.task_sender_func)
-
     executor = MultiThreadedExecutor()
 
     executor.add_node(node)
@@ -110,8 +112,13 @@ def main(args=[]):
     thread = Thread(target=executor.spin)
     thread.start()
 
-    gui.show()
-    app.exec_()
+    if node.gui_sender_param.value:
+        app = QApplication(args)
+        gui = TaskExecutorGUI(node.task_sender_func)
+        gui.show()
+        app.exec_()
+    else:
+        thread.join()
 
     node.destroy_node()
 

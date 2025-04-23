@@ -10,7 +10,7 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-        ('share/' + package_name + "/launch", ['launch/launch.py']),
+        ('share/' + package_name + "/launch", ['launch/te_launch.py']),
         ('share/' + package_name + "/config", ['config/params.yaml']),
     ],
     install_requires=['setuptools'],

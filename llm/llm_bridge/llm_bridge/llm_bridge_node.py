@@ -13,16 +13,14 @@ class LLMNode(Node):
     def __init__(self):
         super().__init__("llm_node")
 
-        self.declare_parameter("W_TOPIC", "/robot/whisper")
-        self.declare_parameter("T_TOPIC", "/task/input")
-        self.declare_parameter("LLM_TOPIC", "/llm")
+        whisper_topic_param = self.declare_parameter("WHISPER_TOPIC", "/robot/whisper")
+        task_topic_param = self.declare_parameter("TASKS_TOPIC", "/task/input")
+        llm_topic_param = self.declare_parameter("LLM_SERVICE_TOPIC", "/llm")
 
-        
+        self.whisper_sub = self.create_subscription(String, whisper_topic_param.value, self.whisper_callback,10)
+        self.task_pub = self.create_publisher(String, task_topic_param.value, 10)
 
-        self.whisper_sub = self.create_subscription(String, self.get_parameter("W_TOPIC").value, self.whisper_callback,10)
-        self.task_pub = self.create_publisher(String, self.get_parameter("T_TOPIC").value, 10)
-
-        self.llm_client = self.create_client(LLMService, self.get_parameter("LLM_TOPIC").value)
+        self.llm_client = self.create_client(LLMService, llm_topic_param.value)
 
         self.get_logger().info("Waiting for service...")
 
@@ -30,9 +28,9 @@ class LLMNode(Node):
             pass
 
         self.get_logger().info("Whisper to LLM Node ready!")
-        self.get_logger().info(f"Whisper topic subscription: {self.get_parameter('W_TOPIC').value}")
-        self.get_logger().info(f"Task topic publisher: {self.get_parameter('T_TOPIC').value}")
-        self.get_logger().info(f"LLM topic service: {self.get_parameter('LLM_TOPIC').value}")
+        self.get_logger().info(f"Whisper topic subscription: {whisper_topic_param.value}")
+        self.get_logger().info(f"Task topic publisher: {task_topic_param.value}")
+        self.get_logger().info(f"LLM topic service: {llm_topic_param.value}")
         self.working = False
     
     def whisper_callback(self, msg: String):

@@ -11,11 +11,19 @@ def generate_launch_description():
         'params.yaml'
         )
 
-    node= Node(
+    rs_node = Node(
         package = 'robot_sim',
         name = 'robot_sim_node',
         executable = 'robot_sim_node',
         parameters = [config]
     )
-    ld.add_action(node)
+
+    tm_node = Node(
+        package = 'task_manager',
+        name = 'task_executor_node',
+        executable = 'task_executor_node',
+        parameters = [config]
+    )
+    ld.add_action(rs_node)
+    ld.add_action(tm_node)
     return ld

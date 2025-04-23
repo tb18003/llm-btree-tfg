@@ -13,15 +13,15 @@ class RobotSimNode(Node):
     def __init__(self, view):
         super().__init__("robot_sim_node")
 
-        self.declare_parameter("MOVE_TOPIC", "/robot/move")
-        self.declare_parameter("TTS_TOPIC", "/robot/tts")
-        self.declare_parameter("WHISPER_TOPIC", "/robot/whisper")
+        move_topic_param = self.declare_parameter("MOVE_TOPIC", "/robot/move")
+        tts_topic_param = self.declare_parameter("TTS_TOPIC", "/robot/tts")
+        whisper_topic_param = self.declare_parameter("WHISPER_TOPIC", "/robot/whisper")
 
         self.view = view
 
-        self.move_sub = self.create_subscription(Point32, self.get_parameter("MOVE_TOPIC").value, self.move_subscription_callback,10)
-        self.tts_sub = self.create_subscription(String, self.get_parameter("TTS_TOPIC").value, self.tts_subscription_callback, 10)
-        self.whisper_pub = self.create_publisher(String, self.get_parameter("WHISPER_TOPIC").value, 10)
+        self.move_sub = self.create_subscription(Point32, move_topic_param.value, self.move_subscription_callback,10)
+        self.tts_sub = self.create_subscription(String, tts_topic_param.value, self.tts_subscription_callback, 10)
+        self.whisper_pub = self.create_publisher(String, whisper_topic_param.value, 10)
 
         self.whisper_pub.topic_name
 
