@@ -28,9 +28,9 @@ class TaskExecutorGUI(QWidget):
     {
         "task": "move",
         "args": {
-            "x": 1.0,
-            "y": 1.3,
-            "z": 2.2
+            "x": -1,
+            "y": 0,
+            "theta": 1
         }
     },
     {

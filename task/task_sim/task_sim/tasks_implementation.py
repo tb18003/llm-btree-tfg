@@ -3,15 +3,20 @@ from py_trees.common import Status
 from std_msgs.msg import String
 from geometry_msgs.msg import Point32
 from task_manager.task_model import Task
-from py_trees.composites import Sequence
+from nav2_msgs.action import NavigateToPose
+from rclpy.action.client import ClientGoalHandle
+#from task_manager.task_executor_node import TaskExecutorNode
 import json
+import rclpy
 
 class MoveTask(Task):
 
     def __init__(self, args):
         super().__init__(args, 'move')
         self.node = None
-        self.sent = False
+
+        self.status = Status.RUNNING
+        self.opposite_task = TTSTask({"speech": "Sorry, I cannot move to that position."})
 
     def setup(self, **kwargs):
         if kwargs['node'] is None:
@@ -21,34 +26,72 @@ class MoveTask(Task):
             raise Exception("(MoveTask::setup) Cannot find 'args' argument")
         
         if 'x' not in self.args.keys() or \
-           'y' not in self.args.keys():
-            raise Exception("(MoveTask::setup) Malformed arguments, check that 'x', 'y' and 'z' variables are set correctly" \
+           'y' not in self.args.keys() or \
+           'theta' not in self.args.keys():
+            raise Exception("(MoveTask::setup) Malformed arguments, check that 'x', 'y' and 'theta' variables are set correctly" \
             f" Arguments type: {type(self.args)} JSON argument: {json.JSONEncoder().encode(self.args)}")
-        
-        if 'z' not in self.args.keys():
-            self.args['z'] = 0.0
             
         self.node : Node = kwargs['node']
-        self.pub = self.node.create_publisher(
-            Point32,
-            '/robot/move',
-            10
-        )
+
+    def send_goal_nav2(self):
+        goal_msg = NavigateToPose.Goal()
+        goal_msg.pose.header.frame_id = 'map'
+        goal_msg.pose.pose.position.x = float(self.args['x'])
+        goal_msg.pose.pose.position.y = float(self.args['y'])
+        goal_msg.pose.pose.orientation.z = 1.0
+        goal_msg.pose.pose.orientation.w = float(self.args['theta'])
+
+        self.node.nav_client.wait_for_server(timeout_sec=3.0)
+        f = self.node.nav_client.send_goal_async(goal_msg)
+        f.add_done_callback(self.goal_callback)
+        self.sent = True
+
+    def goal_callback(self, future):
+        res = future.result()
+
+        if not res.accepted:
+            self.node.get_logger().error("NAV2 rejected btw")
+        else:
+            self.node.get_logger().info("Goal accepted!")
+            f = res.get_result_async()
+            f.add_done_callback(self.result_callback)
+            self._r_f = f
     
+    def result_callback(self, future):
+        res = future.result().result
+        self.node.get_logger().info("Goal reached!")
+
+        if not hasattr(res, 'error_code'):
+            self.node.get_logger().info("Navegación completada con éxito")
+            self.status = Status.SUCCESS
+        else:
+            error_messages = {
+                1: "El robot no puede alcanzar el objetivo",
+                2: "El robot está atascado",
+                3: "El objetivo está fuera de los límites",
+                4: "Tiempo excedido",
+                # ... otros códigos de error
+            }
+            error_msg = error_messages.get(res.error_code, "Error desconocido")
+            if self.args['x'] == -1 and self.args['y'] == 0:
+                self.opposite_task.args = {"speech": error_msg}
+            self.node.get_logger().error(f"Error en navegación: {error_msg} (Código: {res.error_code})")
+            self.status = Status.FAILURE
+
     def update(self):
-        if self.sent == False:
-            try:
-                if self.args['z'] != 0:
-                    return Status.FAILURE
-                self.pub.publish(Point32(x=self.args['x'],y=self.args['y'],z=self.args['z']))
-                self.node.get_logger().info("(MoveTask::update) Sending data...")
-                self.sent = True
-                return Status.SUCCESS
-            except Exception:
-                return Status.FAILURE
+        if not hasattr(self, '_future'):
+            self._future = self.send_goal_nav2()
+
+        rclpy.spin_once(self.node, timeout_sec=0)
+
+        return self.status
     
     def opposite_behavior(self):
-        return TTSTask({"speech": "Sorry, I cannot move to that position."})
+        # if can't go to goal, it goes back to home
+        if self.args['x'] != -1 and self.args['y'] != 0:
+            return MoveTask({'x': -1, 'y': 0, 'theta': 1})
+        
+        return self.opposite_task
 
 class TTSTask(Task):
 

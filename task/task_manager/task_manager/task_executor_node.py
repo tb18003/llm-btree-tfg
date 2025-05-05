@@ -15,12 +15,17 @@ from py_trees.display import ascii_tree
 
 from .task_model import TaskFactory, Task
 from .gui.task_executor_gui import TaskExecutorGUI 
+from rclpy.action import ActionClient
+from rclpy.action.client import ClientGoalHandle
+from rclpy.callback_groups import ReentrantCallbackGroup
+from nav2_msgs.action import NavigateToPose
 
 # Tasks
 from task_sim.tasks_implementation import MoveTask, SuccessTask, FailureTask, TTSTask, LogTask
 import random
 
 from threading import Thread
+from time import sleep
 
 class TaskExecutorNode(Node):
 
@@ -30,20 +35,46 @@ class TaskExecutorNode(Node):
         super().__init__('task_executor_node')
 
         task_topic_param = self.declare_parameter("TASKS_TOPIC","/task/input")
-        self.gui_sender_param = self.declare_parameter("GUI_SENDER", False)
+        self.gui_sender_param = self.declare_parameter("GUI_SENDER", True)
 
         self.task_topic = self.create_subscription(String, task_topic_param.value, self.receive_tasks, 10)
         # GUI Publisher
         if self.gui_sender_param.value:
             self.task_sender = self.create_publisher(String, task_topic_param.value, 10)
 
+        self.cb_group = ReentrantCallbackGroup()
+
+        self.nav_client = ActionClient(self, NavigateToPose, '/navigate_to_pose', callback_group=self.cb_group)
+
         self.actions = actions
         self.get_logger().info("Task Executor node started!")
+
+    def send_goal_nav2(self, msg, callback):
+        self.nav_client.wait_for_server(timeout_sec=3.0)
+        self.get_logger().info("Sending goal...")
+        future = self.nav_client.send_goal_async(msg)
+        future.add_done_callback(callback)
+        return future
+
+    def goal_callback_example(self, future):
+        res: ClientGoalHandle = future.result()
+        if not res.accepted:
+            self.get_logger().error("NAV2 rejected btw")
+        else:
+            self.get_logger().info("Goal accepted!")
+            res.get_result_async().add_done_callback(self.result_callback_example)
+
+    def result_callback_example(self, future):
+        res: NavigateToPose.Result = future.result()
+        self.get_logger().info("Journey completed! [%s]" % res.result)
+
 
     def task_sender_func(self, message):
         self.task_sender.publish(String(data=message))
     
     def receive_tasks(self, msg: String):
+        self.get_logger().info(f"BT Instance:\n{self._executingTree}")
+
         if self._executingTree is not None:
             return
 
@@ -62,9 +93,13 @@ class TaskExecutorNode(Node):
             self._executingTree.setup(node=self)
 
             self.get_logger().debug("-- Starting execution...")
-            self._executingTree.tick(
-                post_tick_handler=self.finished_tree_state
+            self._executingTree.tick_tock(
+                period_ms=500,
+                post_tick_handler=self.finished_tree_tick,
+                stop_on_terminal_state=True,
             )
+            self._executingTree = None
+
         except json.JSONDecodeError:
             self.get_logger().error("Malformed JSON, cannot execute task list.")
         except Exception as e:
@@ -75,24 +110,27 @@ class TaskExecutorNode(Node):
         if opposite is None:
             return task
         
-        sel = Selector(f"subtask{int(random.random()*1000)}", False)
+        sel = Selector(f"task_{int(random.random()*10000)}", False)
         sel.add_child(task)
         sel.add_child(self.opposite_task_rec(opposite))
         return sel
     
-    def finished_tree_state(self, tree):
+    def finished_tree_tick(self, tree):
         if tree.root.status == Status.SUCCESS:
             self.get_logger().info(f"Complete behavior tree:\n{ascii_tree(self._executingTree.root, show_status=True)}")
-            self._executingTree = None
+
 
         elif tree.root.status == Status.FAILURE:
             self.get_logger().error("Couldn't execute the behavior tree, a task failed")
             self.get_logger().info(f"Complete behavior tree:\n{ascii_tree(self._executingTree.root, show_status=True)}")
 
-            self._executingTree = None
+        
 
-        else:
-            self._executingTree.tick(post_tick_handler=self.finished_tree_state)
+def rclpy_callback_spin(node):
+
+    while rclpy.ok():
+        rclpy.spin_once(node, timeout_sec=0.1)
+
 
 def main(args=[]):
     rclpy.init(args=args)
@@ -105,24 +143,20 @@ def main(args=[]):
         'log': LogTask
     })
 
-    executor = MultiThreadedExecutor()
-
-    executor.add_node(node)
-
-    thread = Thread(target=executor.spin)
-    thread.start()
-
+    
     if node.gui_sender_param.value:
         app = QApplication(args)
         gui = TaskExecutorGUI(node.task_sender_func)
+        thread = Thread(target=rclpy_callback_spin, args=(node,))
+        thread.start()
         gui.show()
         app.exec_()
     else:
-        thread.join()
+        rclpy.spin(node=node)
 
     node.destroy_node()
 
-    executor.shutdown()
+    rclpy.shutdown()
 
 if __name__ == "__main__":
     main()

@@ -7,5 +7,5 @@ robot_sim_node:
 task_executor_node:
   ros__parameters:
     TASKS_TOPIC: /task/input
-    GUI_SENDER: False
+    GUI_SENDER: True
     
