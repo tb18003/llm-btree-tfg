@@ -12,6 +12,7 @@ setup(
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name + "/launch", ['launch/te_launch.py', 'launch/tb3_launch.py']),
         ('share/' + package_name + "/config", ['config/params.yaml']),
+        ('share/' + package_name + "/assets", ['assets/map.yaml', 'assets/map.pgm', 'assets/mapir_lab_world.model']),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
