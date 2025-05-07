@@ -1,4 +1,4 @@
-# Task Package
+# Task folder
 
 Para ejecutar el `task_executor` debemos realizar los siguientes pasos:
 
@@ -11,9 +11,9 @@ Para ejecutar el `task_executor` debemos realizar los siguientes pasos:
     ```
 
 2. Ejecutar el launcher (recomendado)
-    - Archivo de lanzamiento `logger_launcher.yaml`, ejecuta los dos nodos necesarios para su funcionamiento.
+    - Archivo de lanzamiento `te_launch.py`, ejecuta los dos nodos necesarios para su funcionamiento.
     ```{bash}
-    ros2 launch task_manager logger_launcher.yaml
+    ros2 launch robot_sim te_launch.py
     ```
 
 3. Ejecutar los nodos necesarios por separado

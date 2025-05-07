@@ -2,9 +2,8 @@ from rclpy.node import Node
 from py_trees.common import Status
 from std_msgs.msg import String
 from geometry_msgs.msg import Point32
-from task_manager.task_model import Task
+from task_manager.task_model import Task # type: ignore
 from nav2_msgs.action import NavigateToPose
-from rclpy.action.client import ClientGoalHandle
 #from task_manager.task_executor_node import TaskExecutorNode
 import json
 import rclpy
