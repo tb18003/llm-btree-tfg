@@ -7,6 +7,6 @@ llm_bridge_node:
 llm_bridge_service:
   ros__parameters:
     LLM_SERVICE_TOPIC: /llm/service
-    LLM_MODEL_ID: meta-llama/Llama-3.1-8B-Instruct
+    LLM_MODEL_ID: deepseek-ai/deepseek-llm-7b-chat
     LLM_MAX_NEW_TOKENS: 250
-    LLM_SYS_PROMPT_FILE: sys.llama.prompt
+    LLM_SYS_PROMPT_FILE: sys.prompt

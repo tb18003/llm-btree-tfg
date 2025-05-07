@@ -21,7 +21,7 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 from nav2_msgs.action import NavigateToPose
 
 # Tasks
-from task_sim.tasks_implementation import MoveTask, SuccessTask, FailureTask, TTSTask, LogTask
+from task_sim.tasks_implementation import MoveTask, SuccessTask, FailureTask, TTSTask, LogTask # type: ignore
 import random
 
 from threading import Thread
@@ -101,7 +101,7 @@ class TaskExecutorNode(Node):
             self._executingTree = None
 
         except json.JSONDecodeError:
-            self.get_logger().error("Malformed JSON, cannot execute task list.")
+            self.get_logger().error("Malformed JSON, cannot execute task list. Received message:\n %s" % msg.data)
         except Exception as e:
             self.get_logger().error(e)
 
