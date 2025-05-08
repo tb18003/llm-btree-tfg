@@ -10,7 +10,7 @@ class ChatGPTModel(LargeLanguageModel):
 
     def generate(self, prompt):
         response = self._client.responses.create(
-            model="gpt-4.1",
+            model="gpt-4o-mini",
             input=[
                 {
                     "role": "developer",
