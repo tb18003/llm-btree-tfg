@@ -76,6 +76,10 @@ def main(args=None):
         node = LLMBridgeService()
 
         rclpy.spin(node=node)
+    except KeyboardInterrupt:
+        pass
+    except Exception as e:
+        node.get_logger().error(e)
     finally:
         node.destroy_node()
 
