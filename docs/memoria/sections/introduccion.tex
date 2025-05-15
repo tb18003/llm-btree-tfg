@@ -1,0 +1,44 @@
+\documentclass[../main.tex]{subfiles}
+
+\begin{document}
+
+\subsection{Motivación}
+La motivación principal para realizar este proyecto es el potencial que ofrece mezclar dos campos que últimamente están creciendo exponencialmente: la \textbf{robótica social} y la \textbf{inteligencia artificial}. Gracias 
+a juntar ambos conceptos, conseguimos que el robot sea capaz de interactuar de forma más humana, respondiendo frases más allá de un conjunto de respuestas programadas, y comprendiendo
+de manera más inteligente qué es lo que le está queriendo transmitir la persona. Además de lo mencionado, utilizaré también una estructura que se llama \textbf{árboles de comportamiento}, utilizado principalmente
+en robots o en PNJ (Personaje No Jugador) en los videojuegos, para planificar de forma inteligente las acciones en el trascurso de su realización.
+
+\subsection{Objetivos}
+Los objetivos principales del proyecto son los siguientes:
+\begin{itemize}
+    
+    \item Implementar y adaptar las tareas que pueda realizar el robot para que sean planificables por el árbol de comportamiento
+\end{itemize}
+
+\subsection{Estructura del documento}
+\blindtext
+
+\subsection{Tecnologías utilizadas}
+
+\subsubsection{ROS2}
+ROS2 es un \textit{framework} diseñado para el desarrollo de software para robots, el cual proporciona servicios como control de hardware,
+abstracción, gestión de dispositivos y comunicación entre procesos (o nodos) y paquetes del sistema. Aunque pudiera parecerlo, ROS2 no es un sistema operativo, sino 
+que es un conjunto de herramientas y bibliotecas cuya finalidad principal consiste en facilitar el desarrollo de aplicaciones robóticas complejas,
+y su escalabilidad.
+
+\subsubsection{Python}
+Python es un lenguaje de programación multiparadigma y multiplataforma. Este lenguaje es muy simple y fácil de aprender, ya que su 
+sintaxis es simple y similar al inglés, lo cual facilita su aprendizaje, y además tiene un tipado dinámico que facilita la asignación de variables. Además de 
+lo mencionado, Python cuenta con un extenso repositorio de librerías, lo cual hace que utilizandolo puedas realizar aplicaciones de distintos tipos (análisis de datos, inteligencia artificial o el
+manejo de ROS2).
+
+\subsubsection{Qt}
+Qt es un \textit{framework} de desarollo de interfaces gráficas multiplataforma el cúal se puede utilizar tanto con el lenguage de programación \textbf{Python} (mencionado anteriormente) o
+con el lenguaje de programación \textbf{C++}.
+
+\subsubsection{Computación en la nube}
+Debido a la gran carga computacional que supone un LLM, el propio robot no podría cargar con un servidor lo suficientemente potente para poder tener un modelo local (debido a limitaciones de potencia eléctrica y peso), por lo que se utiliza un computador externo potente (Ultra Edge) que recibe la información del robot mediante los ya mencionados Servicios de ROS2, y tras realizar el cómputo necesario, devuelve la respuesta al robot.
+
+Gracias a esta tecnología, conseguimos generar y transmitir la información necesaria para el robot sin necesidad de afectar al rendimiento del equipo móvil del robot.
+
+\end{document}

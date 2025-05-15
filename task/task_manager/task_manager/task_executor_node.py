@@ -35,9 +35,12 @@ class TaskExecutorNode(Node):
         super().__init__('task_executor_node')
 
         task_topic_param = self.declare_parameter("TASKS_TOPIC","/task/input")
+        task_info_param = self.declare_parameter("TASKS_INFO","/task/info")
         self.gui_sender_param = self.declare_parameter("GUI_SENDER", True)
 
         self.task_topic = self.create_subscription(String, task_topic_param.value, self.receive_tasks, 10)
+        self.task_logger = self.create_publisher(String, task_info_param.value, 10)
+        
         # GUI Publisher
         if self.gui_sender_param.value:
             self.task_sender = self.create_publisher(String, task_topic_param.value, 10)
@@ -73,19 +76,33 @@ class TaskExecutorNode(Node):
         self.task_sender.publish(String(data=message))
     
     def receive_tasks(self, msg: String):
-        self.get_logger().info(f"BT Instance:\n{self._executingTree}")
-
         if self._executingTree is not None:
             return
 
         try:
             tasks = TaskFactory.parse_json_tasks(self.actions, msg.data)
+            self.tasks: list[dict] = []
             
             self.get_logger().debug("-- Showing received tasks")
             root = Sequence('root-sequence', False)
 
+            self.id = 0
+
             for task in tasks:
                 self.get_logger().debug(f"\tTask: {task.name} & Arguments: {json.JSONEncoder().encode(task.args)}")
+
+                name = task.name
+
+                if type(task) == TTSTask:
+                    name = 'talk'
+
+                self.tasks.append({
+                    "task": name,
+                    "args": task.args,
+                    "status": "pending"
+                })
+
+                task.args['id'] = len(self.tasks) - 1
 
                 root.add_child(self.opposite_task_rec(task))
 
@@ -93,11 +110,13 @@ class TaskExecutorNode(Node):
             self._executingTree.setup(node=self)
 
             self.get_logger().debug("-- Starting execution...")
+            self.log_tasks(0,-1)
             self._executingTree.tick_tock(
                 period_ms=500,
                 post_tick_handler=self.finished_tree_tick,
                 stop_on_terminal_state=True,
             )
+
             self._executingTree = None
 
         except json.JSONDecodeError:
@@ -105,14 +124,34 @@ class TaskExecutorNode(Node):
         except Exception as e:
             self.get_logger().error(e)
 
+    def log_tasks(self, id, status):
+        task = self.tasks[id]
+
+        last_status = task['status']
+
+        if status == Status.RUNNING:
+            task['status'] = 'running'
+        elif status == Status.FAILURE:
+            task['status'] = 'failure'
+        elif status == Status.SUCCESS:
+            task['status'] = 'done'
+        else:
+            task['status'] = 'pending'
+
+        if last_status != task['status']:
+            self.task_logger.publish(String(data=json.JSONEncoder().encode(self.tasks)))
+
     def opposite_task_rec(self, task):
         opposite = task.opposite_behavior()
         if opposite is None:
             return task
         
-        sel = Selector(f"task_{int(random.random()*10000)}", False)
+        sel = Selector(f"task_{self.id}", False)
+        self.id += 1
+
         sel.add_child(task)
         sel.add_child(self.opposite_task_rec(opposite))
+
         return sel
     
     def finished_tree_tick(self, tree):

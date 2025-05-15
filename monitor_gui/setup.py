@@ -20,6 +20,16 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'monitor_node = monitor_gui.monitor_node:main'
         ],
     },
+    include_package_data=True,
+    package_data={
+        'monitor_gui': [
+            'assets/*',
+            "assets/move/*",
+            "assets/talk/*",
+            "assets/face-recognition/*",
+        ]
+    }
 )

@@ -5,6 +5,9 @@ from geometry_msgs.msg import Point32
 from task_manager.task_model import Task # type: ignore
 from nav2_msgs.action import NavigateToPose
 #from task_manager.task_executor_node import TaskExecutorNode
+
+from action_msgs.msg import GoalStatus
+
 import json
 import rclpy
 
@@ -50,6 +53,7 @@ class MoveTask(Task):
 
         if not res.accepted:
             self.node.get_logger().error("NAV2 rejected btw")
+            self.status = Status.FAILURE
         else:
             self.node.get_logger().info("Goal accepted!")
             f = res.get_result_async()
@@ -57,24 +61,18 @@ class MoveTask(Task):
             self._r_f = f
     
     def result_callback(self, future):
-        res = future.result().result
-        self.node.get_logger().info("Goal reached!")
+        status = future.result().status
 
-        if not hasattr(res, 'error_code'):
+        if status == GoalStatus.STATUS_SUCCEEDED:
             self.node.get_logger().info("Navegación completada con éxito")
             self.status = Status.SUCCESS
-        else:
-            error_messages = {
-                1: "El robot no puede alcanzar el objetivo",
-                2: "El robot está atascado",
-                3: "El objetivo está fuera de los límites",
-                4: "Tiempo excedido",
-                # ... otros códigos de error
-            }
-            error_msg = error_messages.get(res.error_code, "Error desconocido")
+        elif status == GoalStatus.STATUS_ABORTED:
             if self.args['x'] == -1 and self.args['y'] == 0:
-                self.opposite_task.args = {"speech": error_msg}
-            self.node.get_logger().error(f"Error en navegación: {error_msg} (Código: {res.error_code})")
+                self.opposite_task.args = {"speech": "Lo siento, no he podido llegar a la localización"}
+            self.node.get_logger().error("Navigation error: Can't reach the position")
+            self.status = Status.FAILURE
+        else:
+            self.node.get_logger().error("Navigation error: Unknown error")
             self.status = Status.FAILURE
 
     def update(self):
@@ -83,6 +81,8 @@ class MoveTask(Task):
 
         rclpy.spin_once(self.node, timeout_sec=0)
 
+        if 'id' in self.args.keys():
+            self.node.log_tasks(self.args['id'], self.status)
         return self.status
     
     def opposite_behavior(self):
@@ -123,8 +123,12 @@ class TTSTask(Task):
                 self.pub.publish(String(data=self.args['speech']))
                 self.node.get_logger().info("(TTSTask::update) Sending data...")
                 self.sent = True
+
+                if 'id' in self.args.keys():
+                    self.node.log_tasks(self.args['id'], Status.SUCCESS)
                 return Status.SUCCESS
-            except Exception:
+            except Exception as e:
+                self.node.get_logger().error("(TTSTask::update) %s" % e)
                 return Status.FAILURE
     
     def opposite_behavior(self):
