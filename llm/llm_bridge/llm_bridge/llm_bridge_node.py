@@ -1,8 +1,11 @@
 import rclpy
 from rclpy.node import Node
 
+import rclpy.time
 from std_msgs.msg import String
 from llm_bridge_interfaces.srv import LLMService
+
+import uuid
 
 class LLMNode(Node):
     """
@@ -36,6 +39,7 @@ class LLMNode(Node):
     def whisper_callback(self, msg: String):
         req = LLMService.Request()
         req.prompt = msg.data
+        req.header.stamp = rclpy.time.Time().to_msg()
 
         self.get_logger().debug(f"Got prompt! '{msg.data}'")
 

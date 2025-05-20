@@ -6,6 +6,8 @@ from ament_index_python import get_package_share_directory
 import os
 import dotenv
 
+import rclpy.time
+
 # LLMs instances
 from .models.llm_factory import LargeLanguageModelFactory
 
@@ -60,9 +62,13 @@ class LLMBridgeService(Node):
             'user': self.system_prompt.findtext('./user') % req.prompt
         }
 
-        res.response = self._model.generate(prompt)
-
-        return res
+        try:
+            res.response = self._model.generate(prompt)
+        except:
+            res.status_code = 1
+        finally:
+            res.header.stamp = rclpy.time.Time().to_msg()
+            return res
 
     def destroy_node(self):
         self.get_logger().info("Unloading model...")
