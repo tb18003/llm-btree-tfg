@@ -1,4 +1,4 @@
-xelatex main.tex 2>&1 >/dev/null
+xelatex main.tex 
 biber main 2>&1 >/dev/null
 xelatex main.tex 2>&1 >/dev/null
 
