@@ -39,7 +39,7 @@ class LLMNode(Node):
     def whisper_callback(self, msg: String):
         req = LLMService.Request()
         req.prompt = msg.data
-        req.header.stamp = rclpy.time.Time().to_msg()
+        req.header.stamp.sec, req.header.stamp.nanosec = self.get_clock().now().seconds_nanoseconds()
 
         self.get_logger().debug(f"Got prompt! '{msg.data}'")
 

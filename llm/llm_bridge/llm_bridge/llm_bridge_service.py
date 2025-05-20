@@ -3,10 +3,10 @@ from rclpy.node import Node
 
 from llm_bridge_interfaces.srv import LLMService
 from ament_index_python import get_package_share_directory
+from rcl_interfaces.msg import SetParametersResult
 import os
 import dotenv
 
-import rclpy.time
 
 # LLMs instances
 from .models.llm_factory import LargeLanguageModelFactory
@@ -22,9 +22,8 @@ class LLMBridgeService(Node):
     def __init__(self):
         super().__init__("llm_bridge_service")
 
-        llm_topic_param = self.declare_parameter("LLM_SERVICE_TOPIC", "/llm")
-        llm_model_param = self.declare_parameter("LLM_MODEL_ID", "meta-llama/Llama-3.1-8B-Instruct")
-
+        self.llm_topic_param = self.declare_parameter("LLM_SERVICE_TOPIC", "/llm")
+        self.llm_model_param = self.declare_parameter("LLM_MODEL_ID", "meta-llama/Llama-3.1-8B-Instruct")
         # Load secrets
         dotenv.load_dotenv(os.path.join(get_package_share_directory('llm_bridge'),'config','.env'))
 
@@ -39,22 +38,10 @@ class LLMBridgeService(Node):
 
         self.system_prompt = ET.parse(os.path.join(get_package_share_directory('llm_bridge'), 'config', self.sys_prompt_file_param.value)).getroot()
 
-        load_time = time.time()
+        self.add_on_set_parameters_callback(self._set_params_callback)
+        self.get_logger().info("LLM Bridge Service started!")
+        self.get_logger().info(f"Note: use 'ros2 param set {self.llm_topic_param.value} <model>' to start the service!")
 
-        self.get_logger().info("Loading model... (It may take a while)")
-        self._model = LargeLanguageModelFactory.get_instance(llm_model_param.value, {
-            'max_new_tokens': self.max_new_tokens_param.value,
-            'temperature': self.temperature_param.value,
-            'top_k': self.top_k_param.value,
-            'top_p': self.top_p_param.value,
-        })
-
-        self.get_logger().info("Model loaded: %s" % self._model.get_model_name())
-
-        self.get_logger().info("Creating service...")
-        self.service = self.create_service(LLMService, llm_topic_param.value, self.callback_service)
-
-        self.get_logger().info(f"LLM Bridge Service ready! Elapsed time: {round(time.time() - load_time, 4)}")
 
     def callback_service(self, req, res):
         prompt = {
@@ -64,15 +51,47 @@ class LLMBridgeService(Node):
 
         try:
             res.response = self._model.generate(prompt)
-        except:
+        except Exception as e:
             res.status_code = 1
+            res.response = "Couldn't generate a response, do you have the model loaded?"
+            self.get_logger().error(e)
         finally:
-            res.header.stamp = rclpy.time.Time().to_msg()
+            res.header.stamp.sec, res.header.stamp.nanosec = self.get_clock().now().seconds_nanoseconds()
             return res
 
+    def _set_params_callback(self, params: list):
+        for param in params:
+            if param.name == self.llm_model_param.name and param.type_ == self.llm_model_param.type_:
+                if hasattr(self, '_model') and self._model:
+                    if self._model.get_model_name() == param.value:
+                        break
+                    else:
+                        self.get_logger().warn("Changing model, service is actually off!")
+                        self.destroy_service(self.service)
+                        self._model.unload()
+                
+                t = time.time()
+                self.get_logger().info("Loading model... (It may take a while)")
+                self._model = LargeLanguageModelFactory.get_instance(param.value, {
+                    'max_new_tokens': self.max_new_tokens_param.value,
+                    'temperature': self.temperature_param.value,
+                    'top_k': self.top_k_param.value,
+                    'top_p': self.top_p_param.value,
+                })
+                self.get_logger().info(f"Model {self._model.get_model_name()} loaded! Elapsed time: {round(time.time() - t, 4)}")
+                self.get_logger().info("Creating service...")
+                self.service = self.create_service(LLMService, self.llm_topic_param.value, self.callback_service)
+                self.get_logger().info("Service created!")
+                break
+
+        return SetParametersResult(successful=True)
+
+
+
     def destroy_node(self):
-        self.get_logger().info("Unloading model...")
-        self._model.unload()
+        if hasattr(self, '_model') and self._model:
+            self.get_logger().info("Unloading model...")
+            self._model.unload()
         return super().destroy_node()
 
 def main(args=None):
@@ -85,12 +104,15 @@ def main(args=None):
     except KeyboardInterrupt:
         pass
     except Exception as e:
-        node.get_logger().error(e)
+        print(e)
     finally:
-        node.destroy_node()
+        if node:
+            node.destroy_node()
 
         if rclpy.ok():
             rclpy.shutdown()
+        
+        print("")
 
 if __name__ == "__main__":
     main()

@@ -34,36 +34,9 @@ and the arguments, using  Each object must follow the following features:
 2 "args" (Arguments of the task: Object)
 
 The response should ALWAYS be the generated task or list of tasks in JSON syntax, do not add explanations or additional information, think that this JSON formatted task will be
-sent to a software will only recognise good formed JSON tasks, otherwise it will fail.
-An example of ALL your output could be the following one:
-'
-[
-    {
-        "task": "talk",
-        "args": {
-            "speech": "Hello, I am Sancho!"
-        }
-    },
-    {
-        "task": "move",
-        "args": {
-            "x": 0.0,
-            "y": 0.0,
-            "theta": 0.0
-        }
-    }
-]
-'
-
-In the case there is one task you can just simply set the output like that:
-'
-{
-        "task": "talk",
-        "args": {
-            "speech": "Hello, I am Sancho!"
-        }
-}
-'
+sent to a software will only recognise good formed JSON tasks, otherwise it will fail. Remember to REMOVE markdown marks like: "```json```" on the response, because it will break the program.
+An example of ALL your output could be the following one (this is an example, not a valid answer if you get stucked):
+'[{"task": "talk","args": {"speech": "Hello, I am Sancho!"}},{"task": "move","args": {"x": 0.0,"y": 0.0,"theta": 0.0}}]'
 
 %s
 

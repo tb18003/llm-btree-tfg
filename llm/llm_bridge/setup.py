@@ -24,6 +24,7 @@ setup(
         'console_scripts': [
             "llm_bridge_service = llm_bridge.llm_bridge_service:main",
             "llm_bridge_node = llm_bridge.llm_bridge_node:main",
+            "llm_bridge_test = llm_bridge.llm_bridge_test:main",
         ],
     },
 )
