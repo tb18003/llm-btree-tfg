@@ -4,13 +4,14 @@ import os
 
 class GeminiModel(LargeLanguageModel):
 
-    def __init__(self, params):
+    def __init__(self, name, params):
         self._client = genai.Client(api_key=os.environ['GEMINI_API_KEY'])
         self._params = params
+        self._name = name
 
     def generate(self, prompt):
         response = self._client.models.generate_content(
-            model="gemini-2.0-flash",
+            model=self._name,
             contents=[prompt['user']],
             config=genai.types.GenerateContentConfig(
                 system_instruction=prompt['system'],
@@ -27,4 +28,4 @@ class GeminiModel(LargeLanguageModel):
         pass
 
     def get_model_name(self):
-        return "Gemini"
+        return self._name

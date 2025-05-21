@@ -20,7 +20,7 @@ import time
 class LLMBridgeService(Node):
 
     def __init__(self):
-        super().__init__("llm_bridge_service")
+        super().__init__("llm_service_node")
 
         self.llm_topic_param = self.declare_parameter("LLM_SERVICE_TOPIC", "/llm")
         self.llm_model_param = self.declare_parameter("LLM_MODEL_ID", "meta-llama/Llama-3.1-8B-Instruct")
@@ -86,11 +86,9 @@ class LLMBridgeService(Node):
 
         return SetParametersResult(successful=True)
 
-
-
     def destroy_node(self):
         if hasattr(self, '_model') and self._model:
-            self.get_logger().info("Unloading model...")
+            print("-\tUnloading model...")
             self._model.unload()
         return super().destroy_node()
 

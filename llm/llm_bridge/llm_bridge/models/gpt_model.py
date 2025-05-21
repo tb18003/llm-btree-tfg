@@ -4,13 +4,14 @@ import os
 
 class ChatGPTModel(LargeLanguageModel):
 
-    def __init__(self, params):
+    def __init__(self, name, params):
         self._client = openai.OpenAI(api_key=os.environ['GPT_API_KEY'])
         self._params = params
+        self._name = name
 
     def generate(self, prompt):
         response = self._client.responses.create(
-            model="gpt-4o-mini",
+            model=self._name,
             input=[
                 {
                     "role": "developer",
@@ -29,4 +30,4 @@ class ChatGPTModel(LargeLanguageModel):
         pass
 
     def get_model_name(self):
-        return "ChatGPT"
+        return self._name

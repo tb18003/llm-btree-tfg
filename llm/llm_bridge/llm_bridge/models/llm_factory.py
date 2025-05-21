@@ -8,8 +8,9 @@ class LargeLanguageModelFactory():
     __models_db: dict[str, LargeLanguageModel] = {
         'meta-llama/Llama-3.1-8B-Instruct': HuggingFaceLocalModel,
         'deepseek-ai/deepseek-llm-7b-chat': HuggingFaceLocalModel,
-        'ChatGPT': ChatGPTModel,
-        'Gemini': GeminiModel
+        'gpt-4o-mini': ChatGPTModel,
+        'o4-mini': ChatGPTModel,
+        'gemini-2.0-flash': GeminiModel
     }
 
     @classmethod
@@ -19,7 +20,4 @@ class LargeLanguageModelFactory():
 
         _cls = cls.__models_db.get(name)
 
-        if _cls == HuggingFaceLocalModel:
-            return _cls(name, params)
-
-        return _cls(params)
+        return _cls(name, params)

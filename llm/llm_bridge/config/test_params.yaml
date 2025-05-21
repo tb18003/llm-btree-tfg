@@ -1,0 +1,23 @@
+llm_test_node:
+  ros__parameters:
+    TEST_MODELS: [
+      "meta-llama/Llama-3.3-70B-Instruct",
+      "deepseek-ai/deepseek-llm-67b-chat",
+      "google/gemma-3-27b-it",
+      "meta-llama/Llama-3.1-8B-Instruct",
+      "deepseek-ai/deepseek-llm-7b-chat",
+      "gpt-4o-mini",
+      "o4-mini",
+      "gemini-2.0-flash"
+    ]
+    
+    TEST_PROMPTS: [
+      "Hola, ¿Quién eres?",
+      "Hola Sancho, ¿sabes quienes son el grupo Nirvana?",
+      "Sancho, ¡vuela!",
+      "Sancho, tengo un poco de hambre",
+      "Sancho, ve al baño y dile a Marcos que nos vamos en 5 minutos",
+      "Sancho, ve al baño, al dormitorio y al salón y avisa de que la comida ya está lista",
+      "Sancho, soy Marcos, Antonio está en el dormitorio, dile que me voy a hacer la compra",
+      "¡Hola Sancho! Avisa por todas las habitaciones que he llegado del trabajo",
+    ]

@@ -11,56 +11,48 @@ class LLMEvaluatorNode(Node):
     def __init__(self):
         super().__init__('llm_bridge_stats_test')
 
-        self.cli = self.create_client(SetParameters, '/llm_bridge_service/set_parameters')
+        self.cli = self.create_client(SetParameters, '/llm_test_service_node/set_parameters')
         self.p_client = self.create_client(LLMService, '/llm')
         while not self.cli.wait_for_service(timeout_sec=5.0):
             self.get_logger().info('🕔 Waiting until parameters service is active...')
 
         self.data: dict[str, list[dict]] = {}
-        self.models = [
-            "meta-llama/Llama-3.1-8B-Instruct",
-            "deepseek-ai/deepseek-llm-7b-chat"
-            "ChatGPT",
-            "Gemini",
-        ]
-
-        self.prompts = [
-            "Hola, ¿Quién eres?",
-            "Hola Sancho, ¿sabes quienes son el grupo Nirvana?",
-            "Sancho, ¡vuela!",
-            "Sancho, tengo un poco de hambre",
-            "Sancho, ve al baño y dile a Marcos que nos vamos en 5 minutos",
-            "Sancho, ve al baño, al dormitorio y al salón y avisa de que la comida ya está lista",
-            "Sancho, soy Marcos, Antonio está en el dormitorio, dile que me voy a hacer la compra",
-            "¡Hola Sancho! Avisa por todas las habitaciones que he llegado del trabajo",
-        ]
-
+        self.models, self.prompts = self.declare_parameters(
+            namespace='',
+            parameters=[
+                ("TEST_MODELS", ["gemini-2.0-flash"]),
+                ("TEST_PROMPTS", ["Hola, ¿Quién eres?"])
+            ]
+        )
 
     def execute_all_tests(self):
+        m_len = len(self.models.value)
+        p_len = len(self.prompts.value)
+        total = m_len * p_len
+        self.get_logger().info(f"-- Test information: {m_len} models, {p_len} prompts = {total} tests")
         self.get_logger().info("🚀 Starting tests --")
 
         i = 0
 
-        for m in self.models:
+        for m in self.models.value:
             self.get_logger().info(f"🚀 {m} Model Tests")
             self.get_logger().info("-----------------------------")
             self.data[m] = []
             self._load_model(m)
             i += 1
-            self._model_test(m, i)
+            self._model_test(m, i, total)
 
         self.get_logger().info("✔️ Test finished!")
         self.save_output()
 
-    def _model_test(self, model, m_i):
+    def _model_test(self, model, m_i, total):
         i = 0
-        total = len(self.prompts) * len(self.models)
+        p_len = total // len(self.models.value)
 
-
-        for p in self.prompts:
+        for p in self.prompts.value:
             self._single_test(p, model)
             i += 1
-            self.get_logger().info(f"\t\t✅ Test done ({m_i * i * 100 // total}% completed)")
+            self.get_logger().info(f"\t\t✅ Test done ({((p_len * m_i + i) * 100) // total}% completed)")
         
     def _load_model(self, model_id):
         req = SetParameters.Request()
@@ -125,6 +117,8 @@ def main(args=None):
         node.destroy_node()
     except KeyboardInterrupt:
         pass
+    except Exception as e:
+        print(e)
     finally:
         if rclpy.ok():
             rclpy.shutdown()
