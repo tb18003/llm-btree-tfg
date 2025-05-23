@@ -37,6 +37,16 @@ class LLMNode(Node):
         self.working = False
     
     def whisper_callback(self, msg: String):
+        """
+        Callback que se ejecuta al recibir un mensaje de tipo String.
+
+        Este método toma el mensaje recibido, lo utiliza como prompt para solicitar una respuesta a un servicio LLM,
+        y publica la respuesta obtenida si la solicitud es exitosa. En caso de error, registra el código de error.
+
+        Parameters
+        ----------
+            msg (String): Mensaje recibido que contiene el prompt para el LLM.
+        """
         req = LLMService.Request()
         req.prompt = msg.data
         req.header.stamp.sec, req.header.stamp.nanosec = self.get_clock().now().seconds_nanoseconds()
@@ -53,9 +63,7 @@ class LLMNode(Node):
                 self.get_logger().error(f"There was an error with code {res.status_code} during LLM Service")
 
         self.llm_client.call_async(req).add_done_callback(_whisper_callback_future)
-
         
-
 def main(args=None):
 
     rclpy.init(args=args)
