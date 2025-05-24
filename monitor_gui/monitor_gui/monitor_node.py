@@ -1,15 +1,20 @@
 import rclpy
 from rclpy.node import Node
 from rclpy.executors import MultiThreadedExecutor
+from rclpy.action import ActionClient
+from nav2_msgs.action import NavigateToPose
 
 from .monitor_gui import MonitoringMainWindow, SplashScreen
 import threading
 
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication, QMessageBox
+from llm_bridge_interfaces.srv import LLMService
 
 from std_msgs.msg import String
 
 from json import JSONDecoder
+from typing import Union
+import time
 
 class MonitorNode(Node):
 
@@ -20,16 +25,22 @@ class MonitorNode(Node):
         whisper_topic_param = self.declare_parameter('WHISPER_TOPIC', '/robot/whisper')
         task_info_param = self.declare_parameter('TASK_INFO_TOPIC', '/task/info')
 
-        self.whisper_sub = self.create_subscription(
-            String,
-            whisper_topic_param.value,
-            self.whisper_callback,
-            10
+        self.nav_client = ActionClient(
+            self,
+            NavigateToPose,
+            'navigate_to_pose'
         )
 
         self.whisper_pub = self.create_publisher(
             String,
             whisper_topic_param.value,
+            10
+        )
+
+        self.whisper_sub = self.create_subscription(
+            String,
+            whisper_topic_param.value,
+            self.whisper_callback,
             10
         )
 
@@ -40,28 +51,62 @@ class MonitorNode(Node):
             10
         )
 
-        self.view = view        
-    
-    def check_systems(self, splash):
-        components = 2
+        self.view = view
+
+    def check_systems(self, splash) -> Union[bool,str]:
+        time.sleep(0.1)  # Allow time for the splash screen to show
+        components = 4
         product = (100 // components)
+        done = 1
 
-        splash.update_progress(1 * product, 'Checking ROS2 System...')
+        splash.update_progress(done * product, 'Checking ROS2 System...')
         if not rclpy.ok():
-            return False
+            return (False, 'ROS2 is not running')
 
-        services = self.get_service_names_and_types()
         topics = self.get_topic_names_and_types()
 
-        # Checking LLM Service
-        splash.update_progress(2 * product, 'Checking services...')
-        if 'llm' not in [name for name, _ in services]:
-            return False
+        done += 1
 
-        return True
+        # Checking LLM Service
+        splash.update_progress(done * product, 'Waiting for LLM service...')
+        c = self.create_client(
+                LLMService,
+                '/llm'
+            )
+        if not c.wait_for_service(timeout_sec=10.0):
+            return (False, 'Timeout reached while waiting for LLM service')
+        
+        c.destroy()
+        
+        done += 1
+
+        # Checking Task Info Topic
+        splash.update_progress(done * product, 'Checking topics...')
+        if '/task/info' not in [name for name, _ in topics]:
+            return (False, 'Cannot find activity for task information topic')
+        
+        if '/task/input' not in [name for name, _ in topics]:
+            return (False, 'Cannot find activity for task input topic')
+
+        done += 1
+
+        # Checking Navigation Action
+        splash.update_progress(done * product, 'Waiting for navigation action server...')
+        if not self.nav_client.wait_for_server(timeout_sec=10.0):
+            return (False, 'Timeout reached while waiting for navigation action server')
+
+        return (True, None)
+    
+    def send_whisper(self, msg: str):
+        m = String(data=msg)
+
+        if self.whisper_pub is not None:
+            self.whisper_pub.publish(m)
+        else:
+            self.get_logger().error("Whisper publisher is not initialized, cannot send message")
 
     def whisper_callback(self, msg):
-        pass
+        self.view.order_update_signal.emit(msg.data)
 
     def task_info_callback(self, msg):
         self.view.tasks_update_signal.emit(JSONDecoder().decode(msg.data))
@@ -79,6 +124,11 @@ def main(args=None):
     node = MonitorNode(gui)
     gui.set_node(node)
 
+    app.setWindowIcon(gui.windowIcon())
+    app.setApplicationName('Sancho Monitor')
+    app.setApplicationVersion('0.1.0')
+    app.setApplicationDisplayName('Tasks Monitor')
+
     executor = MultiThreadedExecutor()
     executor.add_node(node)
 
@@ -86,14 +136,28 @@ def main(args=None):
     thread.start()
     # GUI Init
     
-    splash.show()
-    node.check_systems(splash)
+    splash.show()  # Allow time for the splash screen to show
+
+    ok, msg = node.check_systems(splash)
+    if not ok:
+        QMessageBox.critical(
+            None,
+            'Error',
+            'Cannot start the application. Error cause: %s' % msg
+        )
+        splash.finish(gui)
+        gui.close()
+        executor.shutdown()
+        return
+
     splash.finish(gui)
     gui.show()
 
     c = app.exec_()
 
     executor.shutdown()
+
+
 
 
     

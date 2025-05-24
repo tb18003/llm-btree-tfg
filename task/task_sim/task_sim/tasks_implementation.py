@@ -3,6 +3,7 @@ from py_trees.common import Status
 from std_msgs.msg import String
 from geometry_msgs.msg import Point32
 from task_manager.task_model import Task # type: ignore
+from robot_sim_interfaces.srv import TTSService # type: ignore
 from nav2_msgs.action import NavigateToPose
 #from task_manager.task_executor_node import TaskExecutorNode
 
@@ -79,7 +80,7 @@ class MoveTask(Task):
         if not hasattr(self, '_future'):
             self._future = self.send_goal_nav2()
 
-        rclpy.spin_once(self.node, timeout_sec=0)
+        rclpy.spin_once(self.node, timeout_sec=0.1)
 
         if 'id' in self.args.keys():
             self.node.log_tasks(self.args['id'], self.status)
@@ -97,7 +98,6 @@ class TTSTask(Task):
     def __init__(self, args):
         super().__init__(args, 'tts')
         self.node = None
-        self.sent = False
 
     def setup(self, **kwargs):
         if kwargs['node'] is None:
@@ -109,27 +109,38 @@ class TTSTask(Task):
         if 'speech' not in self.args.keys():
             raise Exception("(TTSTask::setup) Malformed arguments, check that 'speech' variable is set correctly" \
             f" Arguments type: {type(self.args)} JSON argument: {json.JSONEncoder().encode(self.args)}")
-            
         self.node : Node = kwargs['node']
-        self.pub = self.node.create_publisher(
-            String,
-            '/robot/tts',
-            10
-        )
-    
-    def update(self):
-        if self.sent == False:
-            try:
-                self.pub.publish(String(data=self.args['speech']))
-                self.node.get_logger().info("(TTSTask::update) Sending data...")
-                self.sent = True
+        self.status = Status.RUNNING
 
-                if 'id' in self.args.keys():
-                    self.node.log_tasks(self.args['id'], Status.SUCCESS)
-                return Status.SUCCESS
-            except Exception as e:
-                self.node.get_logger().error("(TTSTask::update) %s" % e)
-                return Status.FAILURE
+    def _finished_service_callback(self, future):
+        res = future.result()
+        if res.error == True:
+            self.node.get_logger().error(f"(TTSTask::update) Error: {res.error_message}")
+            self.status = Status.FAILURE
+        else:
+            self.node.get_logger().debug("(TTSTask::update) TTS service finished successfully")
+            self.status = Status.SUCCESS
+
+    def send_tts_request(self):
+        if not self.node.tts_client.wait_for_service(timeout_sec=3.0):
+            self.node.get_logger().error("(TTSTask::send_tts_request) TTS service not available")
+            self.status = Status.FAILURE
+        
+        self.node.get_logger().info("(TTSTask::send_tts_request) Sending TTS request...")
+        f = self.node.tts_client.call_async(TTSService.Request(text=self.args['speech']))
+        f.add_done_callback(self._finished_service_callback)
+        return f
+
+    def update(self):
+        if not hasattr(self, '_future'):
+            self._future = self.send_tts_request()
+
+        rclpy.spin_once(self.node, timeout_sec=0)
+
+        if 'id' in self.args.keys():
+            self.node.log_tasks(self.args['id'], self.status)
+
+        return self.status
     
     def opposite_behavior(self):
         return LogTask({"tag": "error", "msg": "The TTS task cannot be executed."})

@@ -1,33 +1,56 @@
 import sys
-from PyQt5.QtWidgets import (QApplication, QSplashScreen, QMainWindow, 
+from PyQt5.QtWidgets import (QApplication, QSplashScreen, QAction,
                              QProgressBar, QHBoxLayout, QWidget, QLabel,
                              QVBoxLayout, QPlainTextEdit, QPushButton,
-                             QDial, QFrame, QSizePolicy, QMessageBox)
-from PyQt5.QtGui import QPixmap, QFont, QPainter, QColor
+                             QDial, QFrame, QSizePolicy, QMessageBox, QMenuBar)
+from PyQt5.QtGui import QPixmap, QFont, QIcon
 from PyQt5.QtSvg import QSvgWidget
 from PyQt5.QtCore import Qt, pyqtSignal
 
+import os
+
 import time
-import random
+from ament_index_python import get_package_share_directory
+
+BASE_DIR = get_package_share_directory('monitor_gui')
+
 
 class SplashScreen(QSplashScreen):
     def __init__(self):
-        pixmap = QPixmap("./assets/splash.png")  # Reemplaza con tu imagen
-        super().__init__(pixmap, Qt.WindowStaysOnTopHint)
+        splash_path = os.path.join(BASE_DIR, "assets", "splash.png")
+        pixmap = QPixmap(splash_path)
+
+        super().__init__(pixmap, Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint)
         
-        # Configurar barra de progreso
+
         self.progress = QProgressBar(self)
         self.progress.setMaximum(100)
-        self.progress.setGeometry(50, pixmap.height() - 50, pixmap.width() - 100, 20)
+        self.progress.setTextVisible(False)  # Oculta el texto tipo "30%"
         
-        # Configurar texto de estado
+        self.progress.setGeometry(10, pixmap.height() - 20, pixmap.width() - 20, 10)
+
+        self.progress.setStyleSheet("""
+            QProgressBar {
+                background-color: rgba(255, 255, 255, 40);  /* fondo translúcido */
+                border: none;
+                border-radius: 5px;
+            }
+            QProgressBar::chunk {
+                background-color: #88c0d0;  /* azul suave tipo nord */
+                border-radius: 5px;
+            }
+        """)
+
         self.status_label = QLabel("Cargando...", self)
-        self.status_label.setGeometry(50, pixmap.height() - 80, pixmap.width() - 100, 30)
+        self.status_label.setGeometry(20, pixmap.height() - 50, pixmap.width() - 40, 25)
         self.status_label.setAlignment(Qt.AlignCenter)
-        self.status_label.setStyleSheet("QLabel { color: white; }")
-        font = QFont()
-        font.setBold(True)
-        self.status_label.setFont(font)
+        self.status_label.setStyleSheet("""
+            QLabel {
+                color: white;
+                font-weight: bold;
+                font-size: 14px;
+            }
+        """)
         
     def update_progress(self, value, message=None):
         self.progress.setValue(value)
@@ -38,6 +61,7 @@ class SplashScreen(QSplashScreen):
 class MonitoringMainWindow(QWidget):
 
     tasks_update_signal = pyqtSignal(list)
+    order_update_signal = pyqtSignal(str)
 
     status_colors = {
         'done': 'green',
@@ -51,7 +75,16 @@ class MonitoringMainWindow(QWidget):
 
         self.setMinimumWidth(600)
 
+        self.setWindowIcon(QIcon(os.path.join(BASE_DIR, "assets", "icon.png")))
+
+        mb = QMenuBar(self)
+        help_menu = mb.addMenu("Ayuda")
+        about_action = QAction("Acerca de ", self)
+        about_action.triggered.connect(self._show_more_about)
+        help_menu.addAction(about_action)
+
         self.tasks_update_signal.connect(self.add_tasks)
+        self.order_update_signal.connect(self.update_order_input)
 
         base_l = QVBoxLayout()
         self.setLayout(base_l)
@@ -61,15 +94,22 @@ class MonitoringMainWindow(QWidget):
         m_label.setStyleSheet("font-size: 36px")
         m_label.setAlignment(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter)
 
+        base_l.setMenuBar(mb)
         base_l.addWidget(m_label)
         base_l.addWidget(self._input_field_widget())
         base_l.addWidget(self._switch_widget())
         base_l.addWidget(self._task_widget())
 
-        # Configura tu ventana principal aquí
+    def _show_more_about(self):
+        QMessageBox.information(self, "Acerca de", "Robot Tasks Monitoring\nVersión 1.0\nDesarrollado por tbms@uma.es")
 
     def set_node(self, node):
         self.node = node
+        self.send_btn.setEnabled(True)
+
+    def update_order_input(self, order_input):
+        """Actualiza el campo de entrada de órdenes"""
+        self.tfield.setPlainText(order_input)
 
     def _input_field_widget(self):
         c = QWidget()
@@ -79,20 +119,54 @@ class MonitoringMainWindow(QWidget):
         c.setMaximumHeight(80)
 
         self.tfield = QPlainTextEdit()
-        self.tfield.setMaximumHeight(40)
-        self.tfield.setStyleSheet("QPlainTextEdit{ font-size: 20px; font-family: system }")
+        self.tfield.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.tfield.setMaximumHeight(50)
         self.tfield.setEnabled(False)
+
+        self.tfield.setStyleSheet("""
+            QPlainTextEdit {
+                background-color: #f4f4f4;
+                border: 2px solid #cccccc;
+                border-radius: 10px;
+                padding: 8px;
+                font-size: 18px;
+                font-family: 'Segoe UI', 'Helvetica Neue', 'Arial';
+                color: #333;
+            }
+                                  
+            QPlainTextEdit:focus {
+                border-color: #1f6aa7;  /* Cambia el color del borde al enfocar */
+            }
+            
+            QPlainTextEdit::disabled {
+                background-color: #e4e4e4;  /* Color de fondo cuando está deshabilitado */
+                color: #999999;  /* Color del texto cuando está deshabilitado */
+            }
+        """)
         
         self.send_btn = QPushButton()
         self.send_btn.setText("Enviar")
         self.send_btn.setMinimumHeight(40)
-        self.send_btn.clicked.connect(self.__simulate_tasks)
+        self.send_btn.setMinimumWidth(120)
+        self.send_btn.clicked.connect(self._send_task)
+        self.send_btn.setEnabled(False)
+        self.send_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.send_btn.setStyleSheet("QPushButton{ font-family: system; border-radius: 5px; color: white; background-color: #1f6aa7;} QPushButton:hover{ background-color: #1b5f96 } QPushButton:pressed{ background-color: #2277bd; }")
 
         l.addWidget(self.tfield)
         l.addWidget(self.send_btn)
 
         return c
     
+    def _send_task(self):
+        """Envía la orden por el topic de whisper"""
+        self.node.send_whisper(self.tfield.toPlainText())
+        self.send_btn.setEnabled(False)
+        self.send_btn.setText("Ejecutando...")
+        self.tfield.setEnabled(False)
+        
+    
+    """
     def __simulate_tasks(self):
         self.add_tasks(random.choice([[
             {
@@ -122,6 +196,7 @@ class MonitoringMainWindow(QWidget):
                 "status": "pending"
             }
         ], []]))
+    """
 
     def _dial_value_changed(self, value):
         value = True if value == 1 else False
@@ -164,17 +239,12 @@ class MonitoringMainWindow(QWidget):
         frame.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         layout = QHBoxLayout(frame)
 
-        #icon = QSvgWidget(f"./assets/{task_name}/{status}.svg")
-        #icon.setFixedSize(25,25)
+        icon = QSvgWidget(os.path.join(BASE_DIR, "assets", task_name, status + ".svg"))
+        icon.setFixedSize(25,25)
 
-        status_label = QLabel()
-        status_label.setText(f"({status.capitalize()})")
-        status_label.setStyleSheet("QLabel{ border: none, font-size: 20px }")
-
-        layout.addWidget(status_label)
+        layout.addWidget(icon)
 
         label = QLabel(text)
-        label.setFont(QFont("system", 10))
         label.setStyleSheet("QLabel{ border: none, font-size: 20px }")
         layout.addWidget(label)
 
@@ -227,8 +297,17 @@ class MonitoringMainWindow(QWidget):
                 self.node.get_logger().info("Ignoring task %s" % task['task'])
 
         l_status = tasks[len(tasks) - 1]['status']
-        if l_status == 'done':
-            QMessageBox.information(None, 'Información', 'La ejecución de las tareas se ha completado')
+        if l_status == 'done' or l_status == 'failure':
+            if len([task['status'] for task in tasks if task['status'] == 'failure']) > 0:
+                QMessageBox.warning(None, 'Información', 'La ejecución de las tareas no ha finalizado correctamente para todas las tareas') 
+            else:
+                QMessageBox.information(None, 'Información', 'La ejecución de las tareas se ha completado')
+
+            self.send_btn.setEnabled(True)
+            self.send_btn.setText("Enviar")
+            self.tfield.setEnabled(True)
+            self.tfield.setPlainText("")
+
 
         QApplication.processEvents()
 

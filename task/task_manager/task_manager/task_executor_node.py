@@ -1,5 +1,5 @@
 import rclpy
-from rclpy.executors import MultiThreadedExecutor
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from std_msgs.msg import String
 import json
@@ -22,7 +22,7 @@ from nav2_msgs.action import NavigateToPose
 
 # Tasks
 from task_sim.tasks_implementation import MoveTask, SuccessTask, FailureTask, TTSTask, LogTask # type: ignore
-import random
+from robot_sim_interfaces.srv import TTSService # type: ignore
 
 from threading import Thread
 from time import sleep
@@ -48,6 +48,7 @@ class TaskExecutorNode(Node):
         self.cb_group = ReentrantCallbackGroup()
 
         self.nav_client = ActionClient(self, NavigateToPose, '/navigate_to_pose', callback_group=self.cb_group)
+        self.tts_client = self.create_client(TTSService, '/robot/tts', callback_group=self.cb_group)
 
         self.actions = actions
         self.get_logger().info("Task Executor node started!")
@@ -182,20 +183,26 @@ def main(args=[]):
         'log': LogTask
     })
 
-    
-    if node.gui_sender_param.value:
-        app = QApplication(args)
-        gui = TaskExecutorGUI(node.task_sender_func)
-        thread = Thread(target=rclpy_callback_spin, args=(node,))
-        thread.start()
-        gui.show()
-        app.exec_()
-    else:
-        rclpy.spin(node=node)
+    try:
+        if node.gui_sender_param.value:
+            app = QApplication(args)
+            gui = TaskExecutorGUI(node.task_sender_func)
+            thread = Thread(target=rclpy_callback_spin, args=(node,))
+            thread.start()
+            gui.show()
+            app.exec_()
+        else:
+            rclpy.spin(node=node)
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    finally:
+        if node is not None:
+            node.destroy_node()
 
-    node.destroy_node()
-
-    rclpy.shutdown()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 if __name__ == "__main__":
     main()

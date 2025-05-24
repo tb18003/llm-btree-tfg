@@ -23,7 +23,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            "robot_sim_node = robot_sim.robot_sim_node:main"
+            "robot_sim_node = robot_sim.robot_sim_node:main",
+            "tts_sim_node = robot_sim.tts_sim_node:main"
         ],
     },
 )

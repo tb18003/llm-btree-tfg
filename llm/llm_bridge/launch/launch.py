@@ -1,6 +1,7 @@
 from launch import LaunchDescription
 from ament_index_python import get_package_share_directory
 from launch_ros.actions import Node
+from launch.actions import ExecuteProcess
 import os
 
 def generate_launch_description():
@@ -20,10 +21,11 @@ def generate_launch_description():
 
     llm_service = Node(
         package = 'llm_bridge',
-        name = 'llm_bridge_service',
-        executable = 'llm_bridge_service',
+        name = 'llm_service_node',
+        executable = 'llm_service_node',
         parameters = [config]
     )
+
     ld.add_action(llm_node)
     ld.add_action(llm_service)
     return ld

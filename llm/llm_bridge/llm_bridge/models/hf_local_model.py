@@ -1,19 +1,21 @@
 from .llm_model import LargeLanguageModel
 
 # LLM
-import torch
+
 import gc
-from transformers import AutoTokenizer, AutoModelForCausalLM
+
 
 class HuggingFaceLocalModel(LargeLanguageModel):
 
     def __init__(self, id, params):
+        from transformers import AutoTokenizer, AutoModelForCausalLM
         self._id = id
         self._model = AutoModelForCausalLM.from_pretrained(id, device_map="auto")
         self._tokenizer = AutoTokenizer.from_pretrained(id, device_map="auto")
         self._params = params
 
     def generate(self, prompt):
+        from torch import ones_like
         if self._model is None:
             raise Exception('ERROR: LLM Model is not loaded')
 
@@ -45,6 +47,7 @@ class HuggingFaceLocalModel(LargeLanguageModel):
         return self._tokenizer.decode(output[0][inputs.shape[-1]:], skip_special_tokens=True)
 
     def unload(self):
+        from torch.cuda import empty_cache
         del self._model
         gc.collect()
         torch.cuda.empty_cache()

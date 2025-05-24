@@ -1,11 +1,11 @@
 import rclpy
 from rclpy.node import Node
 
-import rclpy.time
 from std_msgs.msg import String
 from llm_bridge_interfaces.srv import LLMService
 
-import uuid
+
+import json
 
 class LLMNode(Node):
     """
@@ -19,14 +19,15 @@ class LLMNode(Node):
         whisper_topic_param = self.declare_parameter("WHISPER_TOPIC", "/robot/whisper")
         task_topic_param = self.declare_parameter("TASKS_TOPIC", "/task/input")
         llm_topic_param = self.declare_parameter("LLM_SERVICE_TOPIC", "/llm")
+        llm_model_param = self.declare_parameter("LLM_MODEL_TOPIC", "gemini-1.5-flash")
 
         self.whisper_sub = self.create_subscription(String, whisper_topic_param.value, self.whisper_callback,10)
         self.task_pub = self.create_publisher(String, task_topic_param.value, 10)
 
         self.llm_client = self.create_client(LLMService, llm_topic_param.value)
 
-        self.get_logger().info("Waiting for service...")
-
+        
+        self.get_logger().info("Waiting for LLM Service...")
         while not self.llm_client.wait_for_service(timeout_sec=1):
             pass
 
@@ -56,6 +57,13 @@ class LLMNode(Node):
         def _whisper_callback_future(future):
             res = future.result()
 
+            try:
+                json.JSONDecoder().decode(res.response)
+            except json.JSONDecodeError:
+                self.get_logger().error("LLM response is not a valid JSON, generating new response...")
+                
+                self.whisper_callback(msg)
+
             if res.status_code == 0:
                 self.get_logger().debug(f"LLM output: {res.response}")
                 self.task_pub.publish(String(data=res.response))
@@ -70,11 +78,18 @@ def main(args=None):
 
     node = LLMNode()
 
-    rclpy.spin(node=node)
+    try:
+        rclpy.spin(node=node)
+    except KeyboardInterrupt:
+        pass
+    except Exception as e:
+        node.get_logger().error(f"An error occurred: {e}")
+    finally:
+        if node is not None:
+            node.destroy_node()
 
-    node.destroy_node()
-
-    rclpy.shutdown()
+        if rclpy.ok(): 
+            rclpy.shutdown()
 
 if __name__ == "__main__":
     main()

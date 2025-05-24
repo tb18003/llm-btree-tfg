@@ -5,6 +5,7 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch_ros.actions import Node
 
 
 def generate_launch_description():
@@ -22,10 +23,19 @@ def generate_launch_description():
             "y_pose": "-2.0",
             "map": os.path.join(rs_dir, 'assets', 'map.yaml')
         }.items())
+    
+    tts_sim = Node(
+        package='robot_sim',
+        executable='tts_sim_node',
+        name='tts_sim_node',
+        output='screen',
+        prefix=['xterm -e '],
+    )
 
     # Create the launch description and populate
     ld = LaunchDescription()
 
     ld.add_action(bringup_cmd)
+    ld.add_action(tts_sim)
 
     return ld

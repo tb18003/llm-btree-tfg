@@ -1,12 +1,15 @@
+/**:
+  ros__parameters:
+    LLM_SERVICE_TOPIC: /llm
+
 llm_bridge_node:
   ros__parameters:
     WHISPER_TOPIC: /robot/whisper
     TASKS_TOPIC: /task/input
-    LLM_SERVICE_TOPIC: /llm/service
 
-llm_bridge_service:
+llm_service_node:
   ros__parameters:
-    LLM_SERVICE_TOPIC: /llm/service
-    LLM_MODEL_ID: deepseek-ai/deepseek-llm-7b-chat
     LLM_MAX_NEW_TOKENS: 250
+    LLM_MODEL_ID: gemini-2.0-flash
     LLM_SYS_PROMPT_FILE: sys.prompt
+

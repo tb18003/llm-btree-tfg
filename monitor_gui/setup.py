@@ -1,4 +1,5 @@
 from setuptools import find_packages, setup
+from glob import glob
 
 package_name = 'monitor_gui'
 
@@ -10,13 +11,9 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-        #('share/' + package_name + "/assets", ['splash.png']),
-        #('share/' + package_name + "/assets/face-recognition", ['face-recognition/done.svg', 'face-recognition/failure.svg',
-        #                                                        'face-recognition/runnning.svg', 'face-recognition/pending.svg']),
-        #('share/' + package_name + "/assets/move", ['move/done.svg', 'move/failure.svg',
-        #                                                        'move/runnning.svg', 'move/pending.svg']),
-        #('share/' + package_name + "/assets/talk", ['talk/done.svg', 'talk/failure.svg',
-        #                                                        'talk/runnning.svg', 'talk/pending.svg']),                                                            
+        ('share/' + package_name + '/assets', ['assets/splash.png','assets/icon.png']),
+        ('share/' + package_name + '/assets/move', glob('assets/move/*.svg')),
+        ('share/' + package_name + '/assets/talk', glob('assets/talk/*.svg')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,

@@ -1,5 +1,5 @@
-from .hf_local_model import HuggingFaceLocalModel
 from .gemini_model import GeminiModel
+from .hf_local_model import HuggingFaceLocalModel
 from .gpt_model import ChatGPTModel
 from .llm_model import LargeLanguageModel
 
@@ -10,7 +10,8 @@ class LargeLanguageModelFactory():
         'deepseek-ai/deepseek-llm-7b-chat': HuggingFaceLocalModel,
         'gpt-4o-mini': ChatGPTModel,
         'o4-mini': ChatGPTModel,
-        'gemini-2.0-flash': GeminiModel
+        'gemini-2.0-flash': GeminiModel,
+        'gemini-1.5-flash': GeminiModel
     }
 
     @classmethod
