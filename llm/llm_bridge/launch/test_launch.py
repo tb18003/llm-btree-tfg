@@ -20,14 +20,14 @@ def generate_launch_description():
     llm_test_node = Node(
         package = 'llm_bridge',
         name = 'llm_test_node',
-        executable = 'llm_bridge_test',
+        executable = 'llm_bridge_test_node',
         parameters = [test_config]
     )
 
     llm_service = Node(
         package = 'llm_bridge',
         name = 'llm_test_service_node',
-        executable = 'llm_bridge_service',
+        executable = 'llm_service_node',
         parameters=[config],
         output="screen",
         prefix="xterm -e"

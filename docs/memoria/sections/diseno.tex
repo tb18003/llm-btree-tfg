@@ -2,7 +2,7 @@
 
 \begin{document}
 
-En esta sección abordaremos el diseño que se ha llevado a cabo para la implementación del sistema, visualizando el sistema y sus interacciones con diagramas de distintas clases, como diagramas
+En esta sección abordaremos el diseño que se ha llevado a cabo para la implementación del sistema, visualizando el sistema y sus interacciones con diagramas de distintos tipos, como diagramas
 de clases, de arquitectura y de secuencia. 
 
 \subsection{Metodología de trabajo}
@@ -19,7 +19,32 @@ Comenzaremos con un diagrama de la arquitectura del sistema (véase la figura \r
     \caption{Diagrama de arquitectura del sistema.}\label{fig:diseno_architecture}
 \end{figure}
 
-Más adelante, en la sección de desarrollo del sistema, se explicará la implementación y la utilización de cada uno de los componentes mostrado más en profundidad.
+En el diagrama podemos observar los distintos nodos que componen el sistema y la forma de como interactúan entre ellos, destacando el \texttt{Task Executor Node} el cúal se trata de un nodo, aunque al tener una lógica interna algo más compleja, hemos decidido desarrollar y exponer en el diagrama los
+componentes internos que lo forman. Seguidamente, explicaremos cada componente y su función dentro del sistema.
+
+\begin{itemize}
+    \item \textbf{Ultra Edge}: Los componentes listados a continuación se ejecutan dentro del ordenador que computa las peticiones que requieren mayores recursos en el equipo físico.
+
+    \begin{itemize}
+        \item \textbf{LLM Service Node}: Este nodo actúa como intermediario entre el LLM y ROS2, gestionando las solicitudes y respuestas.
+        \item \textbf{LLM}: Este componente simboliza el modelo de lenguaje, en este caso, puede ser un modelo tanto cargado localmente en el \textit{edge} como un acceso al modelo a través de una API.
+    \end{itemize}
+
+    \item \textbf{Robot}: Los siguientes componentes se ejecutan dentro del equipo informático del robot.
+    \begin{itemize}
+        \item \textbf{Whisper Node}: Este nodo obtiene la entrada de voz del usuario, la transforma a texto y lo envía por un \textit{topic}.
+        \item \textbf{LLM Node}: Este nodo se encarga de recibir la orden, enviarla hasta el servicio de LLM, y posteriormente, enviar las tareas generadas al ejecutor de tareas.
+        \item \textbf{Task Executor Node}: Este nodo es el encargado de ejecutar las tareas generadas por el LLM. Debido a su complejidad, lo hemos dividido en distintos subcomponentes, los cuales se describen a continuación:
+        \begin{itemize}
+            \item \textbf{Behavior Tree}: Este componente se encarga de crear un árbol de comportamiento que definen la ejecución de las tareas.
+            \item \textbf{Move y TTS Task}: Estos componentes representan las implementaciones de las tareas de movimiento y texto a voz, respectivamente, las cuales serán ejecutadas por el árbol de comportamiento.
+        \end{itemize}
+        \item \textbf{Navigation Node}: Este nodo se encarga de gestionar el sistema de navegación del robot, permitiendo que el robot se desplace por el entorno.
+        \item \textbf{TTS Node}: Este nodo se encarga de transformar el texto a voz, permitiendo que el robot pueda comunicarse con el usuario.
+    \end{itemize}
+
+    \item \textbf{}
+\end{itemize}
 
 \subsection{Componentes del sistema}
 En esta sección describiremos las distintas clases y componentes del sistema. 
@@ -42,7 +67,7 @@ En esta subsección describiremos principlamente los patrones de diseño que se 
 \end{itemize}
 
 \subsection{Comunicación del sistema}
-Para finalizar la sección de diseño, describiremos las comunicaciones que se realizan en el sistema, tanto entre los distintos nodos de ROS2 como entre el sistema y el LLM. Para ello, utilizaremos diagramas de secuencia que representarán las interacciones entre los distintos componentes del sistema.
+Para finalizar la sección de diseño, describiremos las comunicaciones que se realizan en el sistema, tanto entre los distintos nodos de ROS2 como entre el sistema y el LLM. Además de explicar las comunicaciones, visualizaremos unos diagramas de secuencia que representarán las interacciones entre los distintos componentes del sistema.
 
 \subsubsection{Generación de tareas desde el LLM}
 La comunicación para realizar la generación de tareas consta de tres componentes: el nodo del LLM, el nodo del servicio y el modelo de lenguaje. En este caso, el nodo recibe información desde el \textit{topic} de la entrada de voz a texto, el cual envía al servicio. El servicio recibe la orden, y junto al prompt del sistema, la envía al LLM, y cuando este
@@ -58,8 +83,8 @@ volvería a mandar el mensaje al servicio para regenerar la respuesta. A continu
 \end{figure}
 
 
-\subsubsection{Planificación y ejecución de tareas}
-% TODO - Explicar y mostrar diagrama de secuencia
+\subsubsection{Ejecución de tareas}
+La comunicación para la ejecución de tareas consiste principalmente en un nodo, que es el que se encarga de la ejecución de las tareas 
 
 \subsubsection{Monitorización de las tareas}
 La interfaz de monitorización de las tareas se comunica principalmente recibiendo información acerca del estado de las tareas, aunque también envía información al planificador de tareas, simulando el whisper del robot. 

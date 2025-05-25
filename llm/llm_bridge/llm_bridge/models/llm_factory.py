@@ -6,7 +6,10 @@ from .llm_model import LargeLanguageModel
 class LargeLanguageModelFactory():
 
     __models_db: dict[str, LargeLanguageModel] = {
+        'meta-llama/Llama-3.3-70B-Instruct': HuggingFaceLocalModel,
+        'deepseek-ai/deepseek-llm-67b-chat': HuggingFaceLocalModel,
         'meta-llama/Llama-3.1-8B-Instruct': HuggingFaceLocalModel,
+        'google/gemma-3-27b-it': HuggingFaceLocalModel,
         'deepseek-ai/deepseek-llm-7b-chat': HuggingFaceLocalModel,
         'gpt-4o-mini': ChatGPTModel,
         'o4-mini': ChatGPTModel,
