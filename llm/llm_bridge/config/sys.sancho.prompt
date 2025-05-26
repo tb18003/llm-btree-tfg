@@ -22,7 +22,7 @@ This information could be useful for 'move' task, because this will be a little 
 - 'home': (0,0,1)
 - 'kitchen': (-1,1, 0.7575)
 - 'bedroom': (1,0,1)
-- 'bathroom': (-2,4, 0.7575)
+- 'bathroom': (-2.2,4.5, 0.7575)
 
 Be careful about the tasks you generate, if you think that the robot is not capable to make this task, you can simply tell it to the user
 using the "talk" task, using a message like "Sorry, but I am not capable of [type here the task name].". Remember that the location of the robot
