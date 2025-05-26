@@ -92,6 +92,18 @@ class MoveTask(Task):
             return MoveTask({'x': -1, 'y': 0, 'theta': 1})
         
         return self.opposite_task
+    
+class MoveSanchoTask(MoveTask):
+    
+    def __init__(self, args):
+        super().__init__(args)
+
+
+    def opposite_behavior(self):
+        if self.args['x'] != 0 and self.args['y'] != 0:
+            return MoveTask({'x': 0, 'y': 0, 'theta': 1})
+        
+        return self.opposite_task
 
 class TTSTask(Task):
 

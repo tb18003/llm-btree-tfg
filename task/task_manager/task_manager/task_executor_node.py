@@ -21,7 +21,8 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 from nav2_msgs.action import NavigateToPose
 
 # Tasks
-from task_sim.tasks_implementation import MoveTask, SuccessTask, FailureTask, TTSTask, LogTask # type: ignore
+from task_sim.tasks_implementation import (MoveTask, SuccessTask, FailureTask, # type: ignore
+                                           TTSTask, LogTask, MoveSanchoTask) # type: ignore
 from robot_sim_interfaces.srv import TTSService # type: ignore
 
 from threading import Thread
@@ -176,7 +177,7 @@ def main(args=[]):
     rclpy.init(args=args)
 
     node = TaskExecutorNode({
-        'move': MoveTask,
+        'move': MoveSanchoTask,
         'true': SuccessTask,
         'false': FailureTask,
         'talk': TTSTask,
