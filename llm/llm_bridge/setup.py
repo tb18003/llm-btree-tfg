@@ -11,7 +11,7 @@ setup(
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name + '/launch', ['launch/launch.py', 'launch/test_launch.py']),
-        ('share/' + package_name + '/config', ['config/test_params.yaml', 'config/params.yaml', 'config/sys.prompt', 'config/.env']),
+        ('share/' + package_name + '/config', ['config/test_params.yaml', 'config/params.yaml', 'config/sys.prompt', 'config/sys.sancho.prompt','config/.env']),
     ],
     install_requires=['setuptools'],
     zip_safe=True,

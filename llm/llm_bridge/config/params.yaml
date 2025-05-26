@@ -11,5 +11,5 @@ llm_service_node:
   ros__parameters:
     LLM_MAX_NEW_TOKENS: 250
     LLM_MODEL_ID: gemini-2.0-flash
-    LLM_SYS_PROMPT_FILE: sys.prompt
+    LLM_SYS_PROMPT_FILE: sys.sancho.prompt
 

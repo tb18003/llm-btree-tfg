@@ -100,9 +100,9 @@ class LLMBridgeService(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    try:
-        node = LLMBridgeService()
+    node = LLMBridgeService()
 
+    try:
         rclpy.spin(node=node)
     except KeyboardInterrupt:
         pass
