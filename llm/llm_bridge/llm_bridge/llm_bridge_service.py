@@ -78,7 +78,7 @@ class LLMBridgeService(Node):
     def _set_params_callback(self, params: list):
         for param in params:
             if param.name == self.llm_model_param.name and param.type_ == self.llm_model_param.type_:
-                if hasattr(self, '_model') and self._model:
+                if hasattr(self, '_model') and self._model is not None:
                     if self._model.get_model_name() == param.value:
                         break
                     else:

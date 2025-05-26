@@ -30,7 +30,7 @@ class HuggingFaceLocalModel(LargeLanguageModel):
             }
         ], tokenize=True, add_generation_prompt=True, return_tensors="pt", return_attention_mask=True)
         inputs = inputs.to(self._model.device)
-        attention_mask = torch.ones_like(inputs)
+        attention_mask = ones_like(inputs)
         
         output = self._model.generate(
             inputs, 
@@ -50,7 +50,7 @@ class HuggingFaceLocalModel(LargeLanguageModel):
         from torch.cuda import empty_cache
         del self._model
         gc.collect()
-        torch.cuda.empty_cache()
+        empty_cache()
     
     def get_model_name(self):
         return self._id
