@@ -1,8 +1,8 @@
 llm_test_node:
   ros__parameters:
     TEST_MODELS: [
-      #"meta-llama/Llama-3.3-70B-Instruct",
-      #"deepseek-ai/deepseek-llm-67b-chat",
+      "meta-llama/Llama-3.3-70B-Instruct",
+      "deepseek-ai/deepseek-llm-67b-chat",
       "google/gemma-3-27b-it",
       "meta-llama/Llama-3.1-8B-Instruct",
       "deepseek-ai/deepseek-llm-7b-chat",

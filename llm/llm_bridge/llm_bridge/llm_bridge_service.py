@@ -56,7 +56,7 @@ class LLMBridgeService(Node):
         except Exception as e:
             res.status_code = 1
             res.response = "Couldn't generate a response, do you have the model loaded?"
-            self.get_logger().error(e)
+            self.get_logger().info("Error occurred: %s" % e)
         finally:
             res.header.stamp.sec, res.header.stamp.nanosec = self.get_clock().now().seconds_nanoseconds()
             return res

@@ -14,9 +14,6 @@ The move task allow robot to move to any coordinate.
             - x (Float): The X coordinate
             - y (Float): The Y coordinate
             - theta (Float): The cosine of rotation degree divided by 2
-</system>
-
-<user>
 
 This information could be useful for 'move' task, because this will be a little database of more interesting places that human can refer in natural language.
 - 'home': (-1,0,1)
@@ -32,6 +29,10 @@ Note that the response must be a JSON, it could be an array or a single object. 
 and the arguments, using  Each object must follow the following features:
 1 "task" (Name of the task: String)
 2 "args" (Arguments of the task: Object)
+
+</system>
+
+<user>
 
 The response should ALWAYS be the generated task or list of tasks in JSON syntax, do not add explanations or additional information, think that this JSON formatted task will be
 sent to a software will only recognise good formed JSON tasks, otherwise it will fail. Remember to REMOVE markdown marks like: "```json```" on the response, because it will break the program.
