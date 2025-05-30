@@ -58,15 +58,18 @@ class LLMNode(Node):
             res = future.result()
 
             try:
-                json.JSONDecoder().decode(res.response)
+                r: str = res.response
+                r = r.replace("```json", "").replace("```", "")
+
+                json.JSONDecoder().decode(r)
             except json.JSONDecodeError:
                 self.get_logger().error("LLM response is not a valid JSON, generating new response...")
                 
                 self.whisper_callback(msg)
 
             if res.status_code == 0:
-                self.get_logger().debug(f"LLM output: {res.response}")
-                self.task_pub.publish(String(data=res.response))
+                self.get_logger().debug(f"LLM output: {r}")
+                self.task_pub.publish(String(data=r))
             else:
                 self.get_logger().error(f"There was an error with code {res.status_code} during LLM Service")
 
