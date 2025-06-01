@@ -1,5 +1,6 @@
 from rclpy.node import Node
 from py_trees.common import Status
+from py_trees.composites import Sequence
 from std_msgs.msg import String
 from geometry_msgs.msg import Point32
 from task_manager.task_model import Task # type: ignore
@@ -19,7 +20,7 @@ class MoveTask(Task):
         self.node = None
 
         self.status = Status.RUNNING
-        self.opposite_task = TTSTask({"speech": "Sorry, I cannot move to that position."})
+        self.opposite_task = TTSTask({"speech": "Lo siento, no he podido llegar a la localización"})
 
     def setup(self, **kwargs):
         if kwargs['node'] is None:
@@ -36,7 +37,7 @@ class MoveTask(Task):
             
         self.node : Node = kwargs['node']
 
-    def send_goal_nav2(self):
+    def _send_goal_nav2(self):
         goal_msg = NavigateToPose.Goal()
         goal_msg.pose.header.frame_id = 'map'
         goal_msg.pose.pose.position.x = float(self.args['x'])
@@ -46,10 +47,10 @@ class MoveTask(Task):
 
         self.node.nav_client.wait_for_server(timeout_sec=3.0)
         f = self.node.nav_client.send_goal_async(goal_msg)
-        f.add_done_callback(self.goal_callback)
+        f.add_done_callback(self._goal_callback)
         self.sent = True
 
-    def goal_callback(self, future):
+    def _goal_callback(self, future):
         res = future.result()
 
         if not res.accepted:
@@ -58,18 +59,16 @@ class MoveTask(Task):
         else:
             self.node.get_logger().info("Goal accepted!")
             f = res.get_result_async()
-            f.add_done_callback(self.result_callback)
+            f.add_done_callback(self._result_callback)
             self._r_f = f
     
-    def result_callback(self, future):
+    def _result_callback(self, future):
         status = future.result().status
 
         if status == GoalStatus.STATUS_SUCCEEDED:
             self.node.get_logger().info("Navegación completada con éxito")
             self.status = Status.SUCCESS
         elif status == GoalStatus.STATUS_ABORTED:
-            if self.args['x'] == -1 and self.args['y'] == 0:
-                self.opposite_task.args = {"speech": "Lo siento, no he podido llegar a la localización"}
             self.node.get_logger().error("Navigation error: Can't reach the position")
             self.status = Status.FAILURE
         else:
@@ -78,7 +77,7 @@ class MoveTask(Task):
 
     def update(self):
         if not hasattr(self, '_future'):
-            self._future = self.send_goal_nav2()
+            self._future = self._send_goal_nav2()
 
         rclpy.spin_once(self.node, timeout_sec=0.1)
 
@@ -133,7 +132,7 @@ class TTSTask(Task):
             self.node.get_logger().debug("(TTSTask::update) TTS service finished successfully")
             self.status = Status.SUCCESS
 
-    def send_tts_request(self):
+    def _send_tts_request(self):
         if not self.node.tts_client.wait_for_service(timeout_sec=3.0):
             self.node.get_logger().error("(TTSTask::send_tts_request) TTS service not available")
             self.status = Status.FAILURE
@@ -145,7 +144,7 @@ class TTSTask(Task):
 
     def update(self):
         if not hasattr(self, '_future'):
-            self._future = self.send_tts_request()
+            self._future = self._send_tts_request()
 
         rclpy.spin_once(self.node, timeout_sec=0)
 
@@ -157,39 +156,6 @@ class TTSTask(Task):
     def opposite_behavior(self):
         return LogTask({"tag": "error", "msg": "The TTS task cannot be executed."})
 
-class SuccessTask(Task):
-
-    def __init__(self, args):
-        super().__init__(args, 'success')
-
-    def setup(self, **kwargs):
-        if kwargs['node'] is None:
-            raise Exception("(SuccessTask::setup) Cannot find 'node' argument")
-
-        self.logger = kwargs['node'].get_logger()
-        
-    def update(self):
-        self.logger.info("(SuccessTask::update) Task done succesfully")
-        return Status.SUCCESS
-
-class FailureTask(Task):
-
-    def __init__(self, args):
-        super().__init__(args, 'failure')
-
-    def setup(self, **kwargs):
-        if kwargs['node'] is None:
-            raise Exception("(FailureTask::setup) Cannot find 'node' argument")
-
-        self.logger = kwargs['node'].get_logger()
-        
-    def update(self):
-        self.logger.info("(FailureTask::update) Task failured succesfully")
-        return Status.FAILURE
-
-    def opposite_behavior(self):
-        return LogTask({"msg": "Task failed successfully :)"})
-        
 class LogTask(Task):
 
     def __init__(self, args):
