@@ -7,17 +7,16 @@ import gc
 
 class HuggingFaceLocalModel(LargeLanguageModel):
 
-    def __init__(self, id, params):
+    def __init__(self, name, params):
+        super().__init__(name, params)
         from transformers import pipeline, AutoTokenizer
         from torch import bfloat16
-        self._id = id
         self._model = pipeline(
             "text-generation",
-            model=id,
+            model=name,
             model_kwargs={"torch_dtype": bfloat16},
             device_map="auto",
         )
-        self._params = params
 
     def generate(self, prompt):
         if self._model is None:
@@ -53,7 +52,7 @@ class HuggingFaceLocalModel(LargeLanguageModel):
         empty_cache()
     
     def get_model_name(self):
-        return self._id
+        return self._name
 
 if __name__ == "__main__":
     print("Loading model...")

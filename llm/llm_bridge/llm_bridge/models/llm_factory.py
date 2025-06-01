@@ -5,7 +5,7 @@ from .llm_model import LargeLanguageModel
 
 class LargeLanguageModelFactory():
 
-    __models_db: dict[str, LargeLanguageModel] = {
+    _models_db: dict[str, LargeLanguageModel] = {
         'meta-llama/Llama-3.3-70B-Instruct': HuggingFaceLocalModel,
         'deepseek-ai/deepseek-llm-67b-chat': HuggingFaceLocalModel,
         'meta-llama/Llama-3.1-8B-Instruct': HuggingFaceLocalModel,
@@ -19,9 +19,7 @@ class LargeLanguageModelFactory():
 
     @classmethod
     def get_instance(cls, name: str, params: dict[str,str]):
-        if name not in cls.__models_db.keys():
+        if name not in cls._models_db.keys():
             return HuggingFaceLocalModel("meta-llama/Llama-3.1-8B-Instruct", params)
 
-        _cls = cls.__models_db.get(name)
-
-        return _cls(name, params)
+        return cls._models_db.get(name)(name, params)

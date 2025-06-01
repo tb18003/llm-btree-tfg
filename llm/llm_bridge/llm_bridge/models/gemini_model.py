@@ -5,9 +5,8 @@ import os
 class GeminiModel(LargeLanguageModel):
 
     def __init__(self, name, params):
+        super().__init__(name, params)
         self._client = genai.Client(api_key=os.environ['GEMINI_API_KEY'])
-        self._params = params
-        self._name = name
 
     def generate(self, prompt):
         response = self._client.models.generate_content(
