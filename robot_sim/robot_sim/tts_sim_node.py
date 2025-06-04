@@ -13,7 +13,7 @@ class TTSNode(Node):
 
         # Carga un modelo por defecto (puedes cambiarlo por otro más adelante)
         self.get_logger().info("Cargando modelo TTS...")
-        self.tts = TTS(model_name="tts_models/es/tacotron2-DDC/ph", progress_bar=False, gpu=False)
+        self.tts = TTS(model_name="tts_models/es/css10/vits", progress_bar=False, gpu=False)
         self.get_logger().info("Modelo TTS cargado.")
 
         self.create_service(TTSService, '/robot/tts', self.speak_callback)
@@ -46,12 +46,15 @@ class TTSNode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
+
     node = TTSNode()
 
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
         pass
+    except Exception as e:
+        print(f"Error en el nodo TTS: {e}")
     finally:
         if node is not None:
             node.destroy_node()
