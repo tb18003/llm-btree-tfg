@@ -1,29 +1,40 @@
 import rclpy
 from rclpy.node import Node
 from robot_sim_interfaces.srv import TTSService
-import pyttsx3
+from TTS.api import TTS
+import tempfile
+import os
+import sounddevice as sd
+import soundfile as sf
 
 class TTSNode(Node):
     def __init__(self):
         super().__init__('tts_node')
-        self.engine = pyttsx3.init()
-        # Velocidad de habla
-        self.engine.setProperty('rate', 150)
 
-        for v in self.engine.getProperty('voices'):
-            if v.languages and 'es' in v.languages:
-                self.engine.setProperty('voice', v.id)
-                break
-        
+        # Carga un modelo por defecto (puedes cambiarlo por otro más adelante)
+        self.get_logger().info("Cargando modelo TTS...")
+        self.tts = TTS(model_name="tts_models/es/tacotron2-DDC/ph", progress_bar=False, gpu=False)
+        self.get_logger().info("Modelo TTS cargado.")
+
         self.create_service(TTSService, '/robot/tts', self.speak_callback)
         self.get_logger().info(f"TTS node ready.")
 
     def speak_callback(self, request, response):
         text = request.text
         self.get_logger().info(f"Hablando: {text}")
+
         try:
-            self.engine.say(text)
-            self.engine.runAndWait()
+            # Generar audio en memoria
+            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
+                self.tts.tts_to_file(text=text, file_path=f.name)
+
+                # Reproducir el archivo de audio generado
+                data, samplerate = sf.read(f.name)
+                sd.play(data, samplerate)
+                sd.wait()
+
+                os.remove(f.name)  # Limpia el archivo temporal
+
             response.error = False
             response.error_message = ""
         except Exception as e:
@@ -38,16 +49,13 @@ def main(args=None):
     node = TTSNode()
 
     try:
-
         rclpy.spin(node)
     except KeyboardInterrupt:
         pass
-    except Exception as e:
+    finally:
         if node is not None:
             node.destroy_node()
-
-        if rclpy.ok():
-            rclpy.shutdown()
+        rclpy.shutdown()
 
 if __name__ == '__main__':
     main()
