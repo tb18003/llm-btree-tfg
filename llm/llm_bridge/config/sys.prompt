@@ -19,7 +19,7 @@ The move task allow robot to move to any coordinate.
 This information could be useful for 'move' task, because this will be a little database of more interesting places that human can refer in natural language.
 - 'home': (-1,0,1)
 - 'kitchen': (0,1, 0.7575)
-- 'bedroom': (0,2,1)
+- 'bedroom': (-7,-3,1)
 - 'bathroom': (-4,4, 0.7575)
 
 Be careful about the tasks you generate, if you think that the robot is not capable to make this task, you can simply tell it to the user

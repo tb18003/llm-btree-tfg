@@ -32,10 +32,19 @@ def generate_launch_description():
         prefix=['xterm -e '],
     )
 
+    whisper_sim = Node(
+        package='robot_sim',
+        executable='whisper_sim_node',
+        name='whisper_sim_node',
+        output='screen',
+        prefix=['xterm -e '],
+    )
+
     # Create the launch description and populate
     ld = LaunchDescription()
 
     ld.add_action(bringup_cmd)
     ld.add_action(tts_sim)
+    ld.add_action(whisper_sim)
 
     return ld

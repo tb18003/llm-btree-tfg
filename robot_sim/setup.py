@@ -12,7 +12,9 @@ setup(
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name + "/launch", ['launch/te_launch.py', 'launch/tb3_launch.py']),
         ('share/' + package_name + "/config", ['config/params.yaml']),
-        ('share/' + package_name + "/assets", ['assets/map.yaml', 'assets/map.pgm', 'assets/mapir_lab_world.model']),
+        ('share/' + package_name + "/assets", ['assets/map.yaml', 'assets/map.pgm', 
+                                               'assets/mapir_lab_world.model', 'assets/sancho_found.mp3',
+                                               'assets/sancho_finished.mp3']),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -24,7 +26,8 @@ setup(
     entry_points={
         'console_scripts': [
             "robot_sim_node = robot_sim.robot_sim_node:main",
-            "tts_sim_node = robot_sim.tts_sim_node:main"
+            "tts_sim_node = robot_sim.tts_sim_node:main",
+            "whisper_sim_node = robot_sim.whisper_sim_node:main",
         ],
     },
 )
