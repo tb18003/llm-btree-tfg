@@ -53,7 +53,10 @@ class LLMNode(Node):
         req.header.stamp.sec, req.header.stamp.nanosec = self.get_clock().now().seconds_nanoseconds()
 
         self.get_logger().debug(f"Got prompt! '{msg.data}'")
+        self._call_service(req)
 
+
+    def _call_service(self, req, times=0):
         def _whisper_callback_future(future):
             res = future.result()
 
@@ -65,13 +68,19 @@ class LLMNode(Node):
             except json.JSONDecodeError:
                 self.get_logger().error("LLM response is not a valid JSON, generating new response...")
                 
-                self.whisper_callback(msg)
+                req.header.stamp.sec, req.header.stamp.nanosec = self.get_clock().now().seconds_nanoseconds()
+                self._call_service(req,times+1)
 
             if res.status_code == 0:
                 self.get_logger().debug(f"LLM output: {r}")
                 self.task_pub.publish(String(data=r))
             else:
                 self.get_logger().error(f"There was an error with code {res.status_code} during LLM Service")
+
+        if times > 4:
+            self.task_pub.publish(String(data="[]"))
+            self.get_logger().error(f"Too many retries by this prompt, giving up")
+            return
 
         self.llm_client.call_async(req).add_done_callback(_whisper_callback_future)
         

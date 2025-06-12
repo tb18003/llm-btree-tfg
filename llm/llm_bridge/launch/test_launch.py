@@ -21,9 +21,7 @@ def generate_launch_description():
         package = 'llm_bridge',
         name = 'llm_test_node',
         executable = 'llm_bridge_test_node',
-        parameters = [test_config],
-        output="screen",
-        prefix="terminator -x"
+        parameters = [test_config]
     )
 
     llm_service = Node(
@@ -31,6 +29,8 @@ def generate_launch_description():
         name = 'llm_test_service_node',
         executable = 'llm_service_node',
         parameters=[config],
+        output="screen",
+        prefix="terminator -x"
     )
 
     ld.add_action(llm_test_node)

@@ -23,7 +23,7 @@ class LLMBridgeService(Node):
         super().__init__("llm_service_node")
 
         self.llm_topic_param = self.declare_parameter("LLM_SERVICE_TOPIC", "/llm")
-        self.llm_model_param = self.declare_parameter("LLM_MODEL_ID", "")
+        self.llm_model_param = self.declare_parameter("LLM_MODEL_ID", "gemini-2.0-flash")
         # Load secrets
         dotenv.load_dotenv(os.path.join(get_package_share_directory('llm_bridge'),'config','.env'))
 
@@ -70,26 +70,34 @@ class LLMBridgeService(Node):
             'top_k': self.top_k_param.value,
             'top_p': self.top_p_param.value,
         })
+        if self._model is None:
+            self.get_logger().error(f"Model {model_id} is not available!")
+            return False
+        
         self.get_logger().info(f"Model {self._model.get_model_name()} loaded! Elapsed time: {round(time.time() - t, 4)}")
         self.get_logger().info("Creating service...")
         self.service = self.create_service(LLMService, self.llm_topic_param.value, self.callback_service)
         self.get_logger().info("Service created!")
+        return True
 
     def _set_params_callback(self, params: list):
+        r = SetParametersResult()
         for param in params:
             if param.name == self.llm_model_param.name and param.type_ == self.llm_model_param.type_:
-                if hasattr(self, '_model') and self._model is not None:
-                    if self._model.get_model_name() == param.value:
-                        break
-                    else:
-                        self.get_logger().warn("Changing model, service is actually off!")
-                        self.destroy_service(self.service)
-                        self._model.unload()
-                
-                self.load_model(param.value)
-                break
+                r.successful = self._set_model(param.value)
 
-        return SetParametersResult(successful=True)
+        return r
+
+    def _set_model(self, model_id: str):
+        if hasattr(self, '_model') and self._model is not None:
+            if self._model.get_model_name() == model_id:
+                return True
+            else:
+                self.get_logger().warn("Changing model, service is actually off!")
+                self.destroy_service(self.service)
+                self._model.unload()
+
+        return self.load_model(model_id)
 
     def destroy_node(self):
         if hasattr(self, '_model') and self._model:

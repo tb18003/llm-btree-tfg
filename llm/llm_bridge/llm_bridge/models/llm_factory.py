@@ -20,6 +20,6 @@ class LargeLanguageModelFactory():
     @classmethod
     def get_instance(cls, name: str, params: dict[str,str]):
         if name not in cls._models_db.keys():
-            return HuggingFaceLocalModel("meta-llama/Llama-3.1-8B-Instruct", params)
+            return None
 
         return cls._models_db.get(name)(name, params)

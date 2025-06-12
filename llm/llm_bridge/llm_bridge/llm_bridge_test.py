@@ -17,13 +17,9 @@ class LLMEvaluatorNode(Node):
             self.get_logger().info('🕔 Waiting until parameters service is active...')
 
         self.data: dict[str, list[dict]] = {}
-        self.models, self.prompts = self.declare_parameters(
-            namespace='',
-            parameters=[
-                ("TEST_MODELS", ["gemini-2.0-flash"]),
-                ("TEST_PROMPTS", ["Hola, ¿Quién eres?"])
-            ]
-        )
+
+        self.models = self.declare_parameter("TEST_MODELS", ["gemini-2.0-flash"])
+        self.prompts = self.declare_parameter("TEST_PROMPTS", ["Hola, ¿Quién eres?"])
 
     def execute_all_tests(self):
         m_len = len(self.models.value)
@@ -52,7 +48,7 @@ class LLMEvaluatorNode(Node):
         for p in self.prompts.value:
             self._single_test(p, model)
             i += 1
-            self.get_logger().info(f"\t\t✅ Test done ({((p_len * m_i + i) * 100) // total}% completed)")
+            self.get_logger().info(f"\t\t✅ Test done ({(((m_i - 1) * p_len + i) * 100) // total}% completed)")
         
     def _load_model(self, model_id):
         req = SetParameters.Request()
