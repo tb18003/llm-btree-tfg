@@ -17,11 +17,12 @@ class LLMNode(Node):
         super().__init__("llm_node")
 
         whisper_topic_param = self.declare_parameter("WHISPER_TOPIC", "/robot/whisper")
+        text_topic_param = self.declare_parameter("TEXT_TOPIC", "/robot/input")
         task_topic_param = self.declare_parameter("TASKS_TOPIC", "/task/input")
         llm_topic_param = self.declare_parameter("LLM_SERVICE_TOPIC", "/llm")
-        llm_model_param = self.declare_parameter("LLM_MODEL_TOPIC", "gemini-1.5-flash")
 
-        self.whisper_sub = self.create_subscription(String, whisper_topic_param.value, self.whisper_callback,10)
+        self.whisper_sub = self.create_subscription(String, whisper_topic_param.value, self._input_callback,10)
+        self.text_sub = self.create_subscription(String, text_topic_param.value, self._input_callback,10)
         self.task_pub = self.create_publisher(String, task_topic_param.value, 10)
 
         self.llm_client = self.create_client(LLMService, llm_topic_param.value)
@@ -33,11 +34,12 @@ class LLMNode(Node):
 
         self.get_logger().info("Whisper to LLM Node ready!")
         self.get_logger().info(f"Whisper topic subscription: {whisper_topic_param.value}")
+        self.get_logger().info(f"Text topic subscription: {text_topic_param.value}")
         self.get_logger().info(f"Task topic publisher: {task_topic_param.value}")
         self.get_logger().info(f"LLM topic service: {llm_topic_param.value}")
         self.working = False
     
-    def whisper_callback(self, msg: String):
+    def _input_callback(self, msg: String):
         """
         Callback que se ejecuta al recibir un mensaje de tipo String.
 
@@ -57,7 +59,7 @@ class LLMNode(Node):
 
 
     def _call_service(self, req, times=0):
-        def _whisper_callback_future(future):
+        def _input_callback_future(future):
             res = future.result()
 
             try:
@@ -82,7 +84,7 @@ class LLMNode(Node):
             self.get_logger().error(f"Too many retries by this prompt, giving up")
             return
 
-        self.llm_client.call_async(req).add_done_callback(_whisper_callback_future)
+        self.llm_client.call_async(req).add_done_callback(_input_callback_future)
         
 def main(args=None):
 

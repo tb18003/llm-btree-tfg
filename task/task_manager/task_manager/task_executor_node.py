@@ -21,12 +21,10 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 from nav2_msgs.action import NavigateToPose
 
 # Tasks
-from task_sim.tasks_implementation import (MoveTask, SuccessTask, FailureTask, # type: ignore
-                                           TTSTask, LogTask, MoveSanchoTask) # type: ignore
+from task_sim.tasks_implementation import (TTSTask, LogTask, MoveSanchoTask) # type: ignore
 from robot_sim_interfaces.srv import TTSService # type: ignore
 
 from threading import Thread
-from time import sleep
 
 class TaskExecutorNode(Node):
 
@@ -37,7 +35,7 @@ class TaskExecutorNode(Node):
 
         task_topic_param = self.declare_parameter("TASKS_TOPIC","/task/input")
         task_info_param = self.declare_parameter("TASKS_INFO","/task/info")
-        self.gui_sender_param = self.declare_parameter("GUI_SENDER", True)
+        self.gui_sender_param = self.declare_parameter("GUI_SENDER", False)
 
         self.task_topic = self.create_subscription(String, task_topic_param.value, self.receive_tasks, 10)
         self.task_logger = self.create_publisher(String, task_info_param.value, 10)
@@ -79,6 +77,7 @@ class TaskExecutorNode(Node):
     
     def receive_tasks(self, msg: String):
         if self._executingTree is not None:
+            self.get_logger().warn("Ignoring new tasks, already executing a behavior tree")
             return
 
         try:
@@ -120,6 +119,7 @@ class TaskExecutorNode(Node):
             )
 
             self._executingTree = None
+            self.get_logger().debug("Behavior tree cleaned! (%s)" % type(self._executingTree))
 
         except json.JSONDecodeError:
             self.get_logger().error("Malformed JSON, cannot execute task list. Received message:\n %s" % msg.data)
@@ -157,6 +157,8 @@ class TaskExecutorNode(Node):
         return sel
     
     def finished_tree_tick(self, tree):
+        self.get_logger().info("tick :)")
+
         if tree.root.status == Status.SUCCESS:
             self.get_logger().info(f"Complete behavior tree:\n{ascii_tree(self._executingTree.root, show_status=True)}")
 
@@ -178,13 +180,12 @@ def main(args=[]):
 
     node = TaskExecutorNode({
         'move': MoveSanchoTask,
-        'true': SuccessTask,
-        'false': FailureTask,
         'talk': TTSTask,
         'log': LogTask
     })
 
     try:
+        node.get_logger().info(node.gui_sender_param.value and "GUI mode enabled" or "CLI mode enabled")
         if node.gui_sender_param.value:
             app = QApplication(args)
             gui = TaskExecutorGUI(node.task_sender_func)
@@ -193,7 +194,7 @@ def main(args=[]):
             gui.show()
             app.exec_()
         else:
-            rclpy.spin(node=node)
+            rclpy_callback_spin(node)
     except (KeyboardInterrupt, ExternalShutdownException):
         pass
     except Exception as e:

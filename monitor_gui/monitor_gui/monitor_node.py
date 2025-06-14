@@ -23,6 +23,7 @@ class MonitorNode(Node):
 
         # Parameters
         whisper_topic_param = self.declare_parameter('WHISPER_TOPIC', '/robot/whisper')
+        text_topic_param = self.declare_parameter('TEXT_TOPIC', '/robot/input')
         task_info_param = self.declare_parameter('TASK_INFO_TOPIC', '/task/info')
 
         self.nav_client = ActionClient(
@@ -31,9 +32,9 @@ class MonitorNode(Node):
             'navigate_to_pose'
         )
 
-        self.whisper_pub = self.create_publisher(
+        self.text_pub = self.create_publisher(
             String,
-            whisper_topic_param.value,
+            text_topic_param.value,
             10
         )
 
@@ -100,10 +101,10 @@ class MonitorNode(Node):
     def send_whisper(self, msg: str):
         m = String(data=msg)
 
-        if self.whisper_pub is not None:
-            self.whisper_pub.publish(m)
+        if self.text_pub is not None:
+            self.text_pub.publish(m)
         else:
-            self.get_logger().error("Whisper publisher is not initialized, cannot send message")
+            self.get_logger().error("Text publisher is not initialized, cannot send message")
 
     def whisper_callback(self, msg):
         self.view.order_update_signal.emit(msg.data)
@@ -138,7 +139,7 @@ def main(args=None):
     
     splash.show()  # Allow time for the splash screen to show
 
-    ok, msg = node.check_systems(splash)
+    ok, msg = True,None#node.check_systems(splash)
     if not ok:
         QMessageBox.critical(
             None,
@@ -152,6 +153,11 @@ def main(args=None):
 
     splash.finish(gui)
     gui.show()
+
+    node.get_logger().info('Monitor is ready!')
+    node.get_logger().info('Whisper Topic: %s' % node.whisper_sub.topic_name)
+    node.get_logger().info('Text Topic: %s' % node.text_pub.topic_name)
+    node.get_logger().info('Task Topic: %s' % node.task_info_sub.topic_name)
 
     c = app.exec_()
 

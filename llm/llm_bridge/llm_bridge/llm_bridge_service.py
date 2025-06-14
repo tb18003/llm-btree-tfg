@@ -23,7 +23,7 @@ class LLMBridgeService(Node):
         super().__init__("llm_service_node")
 
         self.llm_topic_param = self.declare_parameter("LLM_SERVICE_TOPIC", "/llm")
-        self.llm_model_param = self.declare_parameter("LLM_MODEL_ID", "gemini-2.0-flash")
+        self.llm_model_param = self.declare_parameter("LLM_MODEL_ID", "gemini-1.5-flash")
         # Load secrets
         dotenv.load_dotenv(os.path.join(get_package_share_directory('llm_bridge'),'config','.env'))
 
@@ -40,7 +40,7 @@ class LLMBridgeService(Node):
 
         self.add_on_set_parameters_callback(self._set_params_callback)
         self.get_logger().info("LLM Bridge Service started!")
-        self.get_logger().info(f"Note: use 'ros2 param set /{self.get_name()} LLM_MODEL_ID <model>' change the model!")
+        self.get_logger().info(f"Note: use 'ros2 param set /{self.get_name()} LLM_MODEL_ID <model>' to change the model!")
 
         if self.llm_model_param.value != "":
             self.load_model(self.llm_model_param.value)

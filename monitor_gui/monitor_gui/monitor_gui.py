@@ -2,14 +2,14 @@ import sys
 from PyQt5.QtWidgets import (QApplication, QSplashScreen, QAction,
                              QProgressBar, QHBoxLayout, QWidget, QLabel,
                              QVBoxLayout, QPlainTextEdit, QPushButton,
-                             QDial, QFrame, QSizePolicy, QMessageBox, QMenuBar)
+                             QRadioButton, QFrame, QSizePolicy, QMessageBox, QMenuBar,
+                             QDialog)
 from PyQt5.QtGui import QPixmap, QFont, QIcon
 from PyQt5.QtSvg import QSvgWidget
 from PyQt5.QtCore import Qt, pyqtSignal
 
 import os
 
-import time
 from ament_index_python import get_package_share_directory
 
 BASE_DIR = get_package_share_directory('monitor_gui')
@@ -58,6 +58,48 @@ class SplashScreen(QSplashScreen):
             self.status_label.setText(message)
         QApplication.processEvents()  # Actualizar la interfaz
 
+class AboutDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Acerca de")
+
+        # Layout principal
+        main_layout = QVBoxLayout()
+
+        # Imagen superior
+        image_label = QLabel()
+        pixmap = QPixmap(os.path.join(BASE_DIR, "assets", "icon.png"))  # Asegúrate de tener 'logo.png' en tu ruta
+        pixmap = pixmap.scaled(150, 150, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        image_label.setPixmap(pixmap)
+        image_label.setAlignment(Qt.AlignCenter)
+        main_layout.addWidget(image_label)
+
+        # Información textual
+        info_label = QLabel("Robot Tasks Monitoring<br>Versión 1.0<br>Desarrollado por tbms@uma.es")
+        info_label.setAlignment(Qt.AlignCenter)
+        main_layout.addWidget(info_label)
+
+        lbl = QLabel("Los códigos de colores del estado de las tareas significan:")
+        main_layout.addWidget(lbl)
+
+        # Leyenda de colores
+        legend_layout = QVBoxLayout()
+
+        for color, meaning in [("red", "Tarea fallida"),
+                               ("green", "Tarea completada correctamente"),
+                               ("orange", "Tarea en ejecución")]:
+            item_layout = QHBoxLayout()
+            color_box = QLabel()
+            color_box.setFixedSize(20, 20)
+            color_box.setStyleSheet(f"background-color: {color}; border: 1px solid gray;")
+            text_label = QLabel(meaning)
+            item_layout.addWidget(color_box)
+            item_layout.addWidget(text_label)
+            legend_layout.addLayout(item_layout)
+
+        main_layout.addLayout(legend_layout)
+        self.setLayout(main_layout)
+
 class MonitoringMainWindow(QWidget):
 
     tasks_update_signal = pyqtSignal(list)
@@ -101,7 +143,7 @@ class MonitoringMainWindow(QWidget):
         base_l.addWidget(self._task_widget())
 
     def _show_more_about(self):
-        QMessageBox.information(self, "Acerca de", "Robot Tasks Monitoring\nVersión 1.0\nDesarrollado por tbms@uma.es")
+        AboutDialog(self).exec_()
 
     def set_node(self, node):
         self.node = node
@@ -109,7 +151,10 @@ class MonitoringMainWindow(QWidget):
 
     def update_order_input(self, order_input):
         """Actualiza el campo de entrada de órdenes"""
-        self.tfield.setPlainText(order_input)
+        if self.voice_radio.isChecked() and self.send_btn.text() != "Ejecutando...":
+            self.tfield.setPlainText(order_input)
+            self.send_btn.setEnabled(False)
+            self.send_btn.setText("Ejecutando...")
 
     def _input_field_widget(self):
         c = QWidget()
@@ -164,44 +209,18 @@ class MonitoringMainWindow(QWidget):
         self.send_btn.setEnabled(False)
         self.send_btn.setText("Ejecutando...")
         self.tfield.setEnabled(False)
-        
-    
-    """
-    def __simulate_tasks(self):
-        self.add_tasks(random.choice([[
-            {
-                "task": "move",
-                "args": {
-                    "x": random.random()*10,
-                    "y": random.random()*10
-                },
-                "status": "done"
-            }, {
-                "task": "talk",
-                "args": {
-                    "speech": random.choice(["¡Hola! Soy Sancho, ¿Qué puedo hacer por ti?", "Lo siento, no puedo ir a ese sitio"])
-                },
-                "status": "failure"
-            }, {
-                "task": "face-recognition",
-                "args": {
-                    "target": random.choice(["Antonio", "Toni", "Román", "Eulogio"])
-                },
-                "status": "running"
-            }, {
-                "task": "talk",
-                "args": {
-                    "speech": "hola :)"
-                },
-                "status": "pending"
-            }
-        ], []]))
-    """
+        self.text_radio.setEnabled(False)
+        self.voice_radio.setEnabled(False)
 
-    def _dial_value_changed(self, value):
-        value = True if value == 1 else False
-        self.tfield.setEnabled(value)
-        self.tfield.setPlainText("")
+    def _radio_btn_text(self, value):
+        if value:
+            self.tfield.setEnabled(True)
+            self.send_btn.setEnabled(True)
+    
+    def _radio_btn_voice(self, value):
+        if value:
+            self.tfield.setEnabled(False)
+            self.send_btn.setEnabled(False)
     
     def _switch_widget(self):
         c = QWidget()
@@ -210,24 +229,24 @@ class MonitoringMainWindow(QWidget):
         c.setLayout(l)
         c.setMaximumHeight(70)
 
-        whisper_label = QLabel()
-        whisper_label.setText("Utilizar voz")
-        whisper_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
+        radio_container = QWidget()
+        radio_layout = QHBoxLayout()
+        radio_container.setLayout(radio_layout)
 
-        txt_label = QLabel()
-        txt_label.setText("Utilizar teclado")
-        txt_label.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+        self.text_radio = QRadioButton()
+        self.text_radio.setText("Utilizar teclado")
+        self.text_radio.setChecked(False)
+        self.text_radio.toggled.connect(self._radio_btn_text)
 
-        dial = QDial()
-        dial.setRange(0,1)
-        dial.setValue(0)
-        dial.setMaximumHeight(60)
-        dial.setMaximumWidth(60)
-        dial.valueChanged.connect(self._dial_value_changed)
+        self.voice_radio = QRadioButton()
+        self.voice_radio.setText("Utilizar voz")
+        self.voice_radio.setChecked(True)
+        self.voice_radio.toggled.connect(self._radio_btn_voice)
 
-        l.addWidget(whisper_label)
-        l.addWidget(dial)
-        l.addWidget(txt_label)
+        radio_layout.addWidget(self.text_radio)
+        radio_layout.addWidget(self.voice_radio)
+
+        l.addWidget(radio_container)
 
         return c
     
@@ -303,10 +322,14 @@ class MonitoringMainWindow(QWidget):
             else:
                 QMessageBox.information(None, 'Información', 'La ejecución de las tareas se ha completado')
 
-            self.send_btn.setEnabled(True)
+            if self.text_radio.isChecked():
+                self.tfield.setEnabled(True)
+                self.send_btn.setEnabled(True)
+
             self.send_btn.setText("Enviar")
-            self.tfield.setEnabled(True)
             self.tfield.setPlainText("")
+            self.text_radio.setEnabled(True)
+            self.voice_radio.setEnabled(True)
 
 
         QApplication.processEvents()
