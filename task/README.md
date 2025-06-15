@@ -1,35 +1,14 @@
 # Task folder
 
-Para ejecutar el `task_executor` debemos realizar los siguientes pasos:
+Esta carpeta contiene todos los paquetes relativos a las tareas, incluyendo tanto  el <b>ejecutor de tareas</b> como los <b>modelos</b> e <b>implementaciones de las tareas</b>. Los dos paquetes contenidos son los siguientes:
 
-> **Advertencia** Este paquete depende de del paquete `robot_sim`
+- `task_manager`: Este paquete contiene el nodo encargado de ejecutar las tareas (*task_executor_node.py*) y el modelo abstracto de las tareas junto al generador de tareas (*task_model.py*). Las tareas las recibe por el topic `/task/input`, y envía el estado de las mismas por `/task/info`.
 
-1. Compilar el proyecto dentro del workspace utilizando el comando
-    ```{bash}
-    cd ros2_ws
-    colcon build --symlink-install
-    ```
+- `task_sim`: Este paquete contiene las implementaciones de las tareas, como pueden ser las tareas de movimiento o *text to speech*.
 
-2. Ejecutar el launcher (recomendado)
-    - Archivo de lanzamiento `te_launch.py`, ejecuta los dos nodos necesarios para su funcionamiento.
-    ```{bash}
-    ros2 launch robot_sim te_launch.py
-    ```
+## Ejecutables
 
-3. Ejecutar los nodos necesarios por separado
-
-    - Nodo `task_executor_node`, sirve para crear el BT y ejecutar las tareas según el orden especificado (la interfaz gráfica sirve para enviarle dicha información tal y como se la enviaría la IA).
-
-    ```{bash}
-    ros2 run task_manager task_executor_node
-    ```
-
-    - Nodo `robot_sim_node`, sirve para simular los registros y/o acciones que le llegarían al robot real.
-
-    ```{bash}
-    ros2 run robot_sim robot_sim_node
-    ```
-
-4. [BONUS] Terminar los procesos una vez finalizado su uso
-    
-    Para terminar con la aplicación, deberá cerrar las dos interfaces gráficas (usando Ctrl + C en consola no matará el proceso).
+Este paquete contiene un solo ejecutable para el nodo que se dedica a ejecutar las tareas. Para ejecutarlo es necesario realizar el siguiente comando:
+```sh
+ros2 run task_manager task_executor_node
+```
