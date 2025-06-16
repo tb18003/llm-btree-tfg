@@ -157,8 +157,6 @@ class TaskExecutorNode(Node):
         return sel
     
     def finished_tree_tick(self, tree):
-        self.get_logger().info("tick :)")
-
         if tree.root.status == Status.SUCCESS:
             self.get_logger().info(f"Complete behavior tree:\n{ascii_tree(self._executingTree.root, show_status=True)}")
 

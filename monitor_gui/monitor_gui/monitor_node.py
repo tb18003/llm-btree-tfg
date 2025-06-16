@@ -139,7 +139,7 @@ def main(args=None):
     
     splash.show()  # Allow time for the splash screen to show
 
-    ok, msg = True,None#node.check_systems(splash)
+    ok, msg = node.check_systems(splash)
     if not ok:
         QMessageBox.critical(
             None,
