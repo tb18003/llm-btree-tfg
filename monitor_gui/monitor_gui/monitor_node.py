@@ -8,7 +8,7 @@ from .monitor_gui import MonitoringMainWindow, SplashScreen
 import threading
 
 from PyQt5.QtWidgets import QApplication, QMessageBox
-from llm_bridge_interfaces.srv import LLMService
+from llm_bridge_interfaces.srv import LLMService # type: ignore
 
 from std_msgs.msg import String
 
@@ -136,8 +136,7 @@ def main(args=None):
     thread = threading.Thread(target=executor.spin, daemon=True)
     thread.start()
     # GUI Init
-    
-    splash.show()  # Allow time for the splash screen to show
+    splash.show()
 
     ok, msg = node.check_systems(splash)
     if not ok:

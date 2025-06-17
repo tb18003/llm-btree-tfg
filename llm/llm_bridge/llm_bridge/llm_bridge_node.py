@@ -9,8 +9,22 @@ import json
 
 class LLMNode(Node):
     """
-    This node listen to the whisper topic (which return what human said), and sends it to the LLM Service. The response
-    from the service is sent to the task input topic with a JSON format.
+    LLMNode is a ROS2 node that bridges input text (from Whisper or other sources)
+    to a Large Language Model (LLM) service, and publishes the LLM's response as a task.
+
+    Subscribes to:
+        - Whisper topic (default: /robot/whisper)
+        - Text topic (default: /robot/input)
+
+    Publishes to:
+        - Task topic (default: /task/input)
+
+    Calls service:
+        - LLMService (default: /llm)
+
+    When a message is received on either input topic, it is sent as a prompt to the LLM service.
+    The response (expected as JSON) is validated and published to the task topic.
+    If the response is not valid JSON, the request is retried up to 5 times.
     """
 
     def __init__(self):

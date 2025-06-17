@@ -14,6 +14,18 @@ import json
 import rclpy
 
 class MoveTask(Task):
+    """
+    A Task that sends a navigation goal to the robot using the nav2 stack.
+
+    Args:
+        args (dict): Dictionary with keys 'x', 'y', and 'theta' specifying the target position and orientation.
+
+    Behavior:
+        - On setup, checks for required arguments and node.
+        - On update, sends a navigation goal and monitors its status.
+        - Sets status to SUCCESS if the robot reaches the goal, FAILURE otherwise.
+        - If the task cannot be executed, returns a TTSTask apologizing as opposite behavior.
+    """
 
     def __init__(self, args):
         super().__init__(args, 'move')
@@ -93,6 +105,9 @@ class MoveTask(Task):
         return self.opposite_task
     
 class MoveSanchoTask(MoveTask):
+    """
+    Same as MoveTask, but changing the 'home' coordinates for the Sancho robot context.
+    """
     
     def __init__(self, args):
         super().__init__(args)
@@ -105,6 +120,18 @@ class MoveSanchoTask(MoveTask):
         return self.opposite_task
 
 class TTSTask(Task):
+    """
+    A Task that sends a text-to-speech (TTS) request using a ROS2 service.
+
+    Args:
+        args (dict): Dictionary with at least the key 'speech' containing the text to be spoken.
+
+    Behavior:
+        - On setup, checks for required arguments and node.
+        - On update, sends a TTS request to the service and waits for completion.
+        - Sets status to SUCCESS if the TTS service call succeeds, FAILURE otherwise.
+        - If the task cannot be executed, returns a LogTask with an error message as opposite behavior.
+    """
 
     def __init__(self, args):
         super().__init__(args, 'tts')

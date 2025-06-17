@@ -19,8 +19,6 @@ setup(
     license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
-        'console_scripts': [
-            'move_node = task_sim.move_node:main'
-        ],
+        'console_scripts': [],
     },
 )

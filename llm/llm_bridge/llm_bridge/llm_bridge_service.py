@@ -18,6 +18,16 @@ import xml.etree.ElementTree as ET
 import time
 
 class LLMBridgeService(Node):
+    """
+    LLMBridgeService provides a ROS2 service interface to interact with large language models (LLMs).
+    It loads model parameters, system prompts, and exposes a service for generating responses from LLMs.
+
+    Key Features:
+    - Loads LLM configuration and secrets from environment and config files.
+    - Supports dynamic model switching via ROS2 parameters.
+    - Handles prompt formatting using XML-based system/user templates.
+    - Provides a ROS2 service endpoint for LLM inference requests.
+    """
 
     def __init__(self):
         super().__init__("llm_service_node")
