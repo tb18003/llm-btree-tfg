@@ -27,6 +27,9 @@ from robot_sim_interfaces.srv import TTSService # type: ignore
 from threading import Thread
 
 class TaskExecutorNode(Node):
+    """
+    A ROS2 node that receives tasks (as JSON) via a topic, builds a behavior tree from them, executes the tree, and logs task progress. Optionally, it can send tasks from a GUI. Integrates with navigation and TTS services, and supports custom task implementations.
+    """    
 
     _executingTree : None | BehaviourTree = None
 
